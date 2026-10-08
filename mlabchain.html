@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MLabChain in detail — MLabChain</title>
+<meta name="description" content="Two-layer architecture, challenge manifests, verifier contract, symbolic operations, marginal rewards, fork choice, and the honest boundary of MLabChain v0.3.">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html">
+      <span class="pulse"></span><img src="assets/mlabchain.png" alt="">MLabChain
+    </a>
+    <div class="nav-menu">
+      <a href="index.html">Home</a>
+      <a href="blockchain.html">Blockchain</a>
+      <a href="industry.html">Industry</a>
+      <a href="mlabchain.html" class="active">MLabChain</a>
+      <a href="mera.html">Mera</a>
+      <a href="docs.html">Docs</a>
+      <a href="about.html">About</a>
+    </div>
+    <button class="nav-toggle" aria-label="Menu"><span></span></button>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap page-hero-in">
+    <nav class="crumbs">
+      <a href="index.html">Home</a><span class="sep">/</span><span>MLabChain</span>
+    </nav>
+    <div class="eyebrow rev">Protocol</div>
+    <h1 class="h1 rev d1">The protocol,<br><em>end to end.</em></h1>
+    <p class="lede rev d2" style="margin-top:24px">
+      How MLabChain separates scientific work from chain security, how
+      rewards are issued, how the chain resolves conflicts, and where the
+      honest boundary sits.
+    </p>
+    <div class="page-hero-banner rev d3">
+      <img src="assets/MERA_v3.png" alt="Mera v0.3.0">
+    </div>
+  </div>
+</header>
+
+<div class="article">
+  <aside class="article-toc rev">
+    <div class="lbl">On this page</div>
+    <ol>
+      <li><a href="#idea">The one idea</a></li>
+      <li><a href="#architecture">Two layers</a></li>
+      <li><a href="#challenge">Challenge manifests</a></li>
+      <li><a href="#verifier">The verifier contract</a></li>
+      <li><a href="#operations">Symbolic operations</a></li>
+      <li><a href="#reward">The reward formula</a></li>
+      <li><a href="#marginal">Marginal rewards</a></li>
+      <li><a href="#consensus">Consensus and fork choice</a></li>
+      <li><a href="#p2p">The P2P layer</a></li>
+      <li><a href="#boundary">The honest boundary</a></li>
+    </ol>
+  </aside>
+
+  <article class="article-body">
+
+    <h2 id="idea"><span class="num">01</span>The one idea</h2>
+    <p>
+      Chain security and scientific work are two different mechanisms that
+      most blockchains conflate. MLabChain keeps them separate.
+    </p>
+    <ul>
+      <li><strong>Chain security</strong> is provided by SHA-256 proof-of-work. It seals blocks and gives a Sybil-resistance signal. It has nothing to do with machine learning.</li>
+      <li><strong>Scientific work</strong> is provided by <code>ML_WORK</code> transactions. Each one commits a trained model, an architecture, a challenge, and a set of metrics. Only these mint Mera.</li>
+    </ul>
+    <p>
+      Separating the two means the ML verifier can be replaced without
+      touching consensus, and the block-sealing rule can be changed without
+      touching the reward math. That is what makes the project auditable.
+    </p>
+
+    <h2 id="architecture"><span class="num">02</span>Two layers</h2>
+    <p>
+      The system is split into two programs that talk over a subprocess
+      boundary.
+    </p>
+
+    <div class="grid g2" style="margin-top:28px">
+      <div class="card">
+        <span class="idx">Python — mlabchain.py</span>
+        <h3>Scientific layer</h3>
+        <p>
+          Deterministic training, challenge manifests, dataset and model
+          hashing, LSWU audit score, Scrypt + AES-GCM wallet, transaction
+          construction, CLI.
+        </p>
+      </div>
+      <div class="card">
+        <span class="idx">C++ — mera_core.cpp</span>
+        <h3>Consensus layer</h3>
+        <p>
+          Ed25519 verification, SQLite canonical state, signed block
+          proposals, adaptive PoW, cumulative-work fork choice,
+          replay-based validation, challenge registry, integer-only
+          reward issuance, TCP P2P.
+        </p>
+      </div>
+    </div>
+
+    <p style="margin-top:24px">
+      The C++ core is authoritative for monetary state. The Python layer is
+      authoritative for what a training run actually produced. Neither can
+      override the other. A bug in Python cannot mint Mera; a bug in C++
+      cannot train a model.
+    </p>
+
+    <h2 id="challenge"><span class="num">03</span>Challenge manifests</h2>
+    <p>
+      No reward is paid against a free-form submission. Every reward is
+      against a <strong>challenge</strong> — a fixed object that pins the
+      task, the data, the split, the metric, and the baseline.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Field</th><th>What it pins</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>challenge_id</code></td><td>Unique name, e.g. <code>MLC-LINEAR-001</code></td></tr>
+          <tr><td><code>manifest_sha256</code></td><td>Hash of the canonical manifest</td></tr>
+          <tr><td><code>dataset_sha256</code></td><td>Commitment to the dataset</td></tr>
+          <tr><td><code>verifier</code></td><td>The verifier class that pays for work</td></tr>
+          <tr><td><code>metric</code></td><td><code>NMSE</code> in v0.3</td></tr>
+          <tr><td><code>split_rule</code></td><td><code>first_fraction</code> in v0.3</td></tr>
+          <tr><td><code>n_samples</code>, <code>n_features</code></td><td>Dataset dimensions</td></tr>
+          <tr><td><code>train_fraction_ppm</code></td><td>Training fraction, in ppm</td></tr>
+          <tr><td><code>max_epochs</code></td><td>Upper bound on submitted training</td></tr>
+          <tr><td><code>baseline_scaled</code></td><td>Fixed-point baseline NMSE</td></tr>
+          <tr><td><code>budget</code></td><td>Finite Mera budget for the challenge</td></tr>
+          <tr><td><code>activation_height</code></td><td>Maturity delay (8 blocks)</td></tr>
+          <tr><td><code>expiry_height</code></td><td>Expiry (1000 blocks after creation)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      A challenge is registered with a bond, becomes active after maturity,
+      and expires after a fixed lifetime. Registration costs prevent spam.
+      Maturity gives other nodes time to observe. Expiry bounds the total
+      issuance any single challenge can produce.
+    </p>
+
+    <h2 id="verifier"><span class="num">04</span>The verifier contract</h2>
+    <p>
+      A verifier is a rule for checking that a submitted model was actually
+      trained the way the submission claims. In v0.3 there is exactly one:
+    </p>
+    <p style="font-family:var(--mono);color:var(--amber);letter-spacing:.04em">
+      MLabChain-linear-v4
+    </p>
+    <p>
+      It is deterministic linear regression with a seeded dataset generator,
+      a fixed SGD update order, and a fixed train/test split. Every node can
+      replay it byte-for-byte. Two identical submissions produce identical
+      models, identical metrics, and identical reward.
+    </p>
+
+    <div class="callout warn">
+      <div class="ttl">Why so narrow</div>
+      <p>
+        Because a verifier that cannot be replayed by every node is not a
+        verifier at all. Any model class with randomness, GPU scheduling,
+        or framework-dependent floating-point accumulation cannot be
+        consensus-validated. v0.3 pays for the narrowest useful class and
+        is honest about the rest.
+      </p>
+    </div>
+
+    <h2 id="operations"><span class="num">05</span>Symbolic operations</h2>
+    <p>
+      The reward is denominated in <em>symbolic operations</em>, not in wall
+      time and not in hardware cycles. For the native verifier:
+    </p>
+
+<pre><code><span class="k">ops</span> = epochs × n_train × (3 × n_features + 4)</code></pre>
+
+    <p>
+      This counts one multiply-add per feature per forward pass, one per
+      feature per weight update, plus the constant terms. It is a model of
+      the algorithm, not a measurement of the machine. A slower machine does
+      not earn more. A faster one does not earn less per proof.
+    </p>
+
+    <p>
+      The count is bounded by <code>MAX_OPS_PER_WORK = 10^15</code>, so a
+      single submission cannot claim arbitrary amounts of work.
+    </p>
+
+    <h2 id="reward"><span class="num">06</span>The reward formula</h2>
+    <p>
+      The reward for a submission depends on two things: how many symbolic
+      operations it performed, and how much it improved the challenge's
+      frontier. Both are integer-quantised in C++.
+    </p>
+
+<pre><code><span class="c"># fixed-point NMSE, scaled by 1e9</span>
+quality_ppm = clamp( (baseline − model) × 1e6 / baseline, 0, 1e6 )
+
+<span class="c"># difference from the current best accepted quality</span>
+delta_q = quality_ppm − challenge.best_quality_ppm
+
+<span class="c"># integer reward in atomic units (1 MERA = 1e8 atomic)</span>
+reward = min( <span class="k">50 MERA</span>, ops × delta_q × 1e8 / (1e7 × 1e6) )</code></pre>
+
+    <p>
+      Three constraints apply on top of the formula:
+    </p>
+    <ul>
+      <li><code>reward ≤ challenge.budget_remaining</code></li>
+      <li><code>total_supply + reward ≤ 100,000,000 MERA</code></li>
+      <li><code>delta_q > 0</code>, or the reward is zero</li>
+    </ul>
+
+    <h2 id="marginal"><span class="num">07</span>Marginal rewards, elaborated</h2>
+    <p>
+      The key design choice is <em>marginality</em>. A submission is rewarded
+      not against the challenge's original baseline, but against the current
+      best that the challenge has already paid for.
+    </p>
+    <p>
+      Concretely: if a challenge starts with a baseline NMSE of <code>1.0</code>
+      and the first submission achieves <code>0.5</code>, the first
+      submitter gets paid for the full delta. If a second submission
+      achieves <code>0.4</code>, the second submitter gets paid only for
+      the difference between <code>0.5</code> and <code>0.4</code>. If a
+      third submission achieves <code>0.6</code>, it is paid nothing,
+      because it did not improve on the best.
+    </p>
+
+    <div class="callout info">
+      <div class="ttl">Why this matters</div>
+      <p>
+        Without marginality, the same good model could be submitted by
+        many accounts and rewarded each time. With marginality, only the
+        newest best result is worth anything, and re-submitting an old
+        result is worth nothing. Combined with the <code>(challenge,
+        dataset, model)</code> claim set, this makes duplicate payment
+        structurally impossible.
+      </p>
+    </div>
+
+    <h2 id="consensus"><span class="num">08</span>Consensus and fork choice</h2>
+    <p>
+      Blocks are sealed by SHA-256 proof-of-work with an adaptive target.
+      Difficulty is retargeted every 16 blocks toward a 60-second target,
+      bounded to ±1 step per retarget and clamped to the range [1, 8].
+    </p>
+    <p>
+      When two chains compete, the one with the highest cumulative work
+      wins. Ties break by lower tip hash. On reorg, the winning chain is
+      replayed from genesis and the canonical state is replaced.
+    </p>
+
+    <h3>Signed block proposals</h3>
+    <p>
+      Every block header includes the producer's address, public key, and
+      signature over the canonical header. A block is only valid if
+      <code>address_from_pubkey(pubkey) == producer</code> and the signature
+      verifies.
+    </p>
+
+    <h3>Timestamps</h3>
+    <p>
+      A block's timestamp must be strictly greater than the median of the
+      last 11 blocks and no more than 2 minutes ahead of the node's local
+      clock. This is a simple policy, and the docs say so; production
+      would need peer-clock sampling.
+    </p>
+
+    <h2 id="p2p"><span class="num">09</span>The P2P layer</h2>
+    <p>
+      The reference node speaks a small line-based protocol over TCP. The
+      commands are <code>PING</code>, <code>STATUS</code>,
+      <code>GETCHAIN</code>, <code>TX|&lt;wire&gt;</code>, and
+      <code>BLOCK|&lt;wire&gt;</code>. Peer addresses are supplied on the
+      command line; there is no discovery.
+    </p>
+    <p>
+      Sync is pull-based: a node polls its peers for status, and if a peer
+      advertises greater cumulative work, the node requests the full chain
+      and runs a fork-choice comparison.
+    </p>
+
+    <div class="callout danger">
+      <div class="ttl">Do not run this on the public Internet</div>
+      <p>
+        The reference P2P protocol is plaintext, unauthenticated, and has
+        no peer scoring, no connection quotas, no anti-eclipse protection,
+        and no DoS resistance. It is a demonstration of the design, not a
+        hardened network.
+      </p>
+    </div>
+
+    <h2 id="boundary"><span class="num">10</span>The honest boundary</h2>
+    <p>
+      MLabChain v0.3 solves a narrow problem, and everything on this site is
+      written to make that narrowness visible. The four things it does not
+      solve:
+    </p>
+
+    <div class="split">
+      <div class="col yes">
+        <h4><span class="dot"></span> What it pays for</h4>
+        <ul>
+          <li>Deterministic linear regression against a pinned challenge.</li>
+          <li>Registered, budgeted, maturity-delayed challenges.</li>
+          <li>Marginal rewards vs the current best accepted quality.</li>
+          <li>Signed transfers, nonces, multisig, key rotation.</li>
+          <li>Fork choice by cumulative work, with reorg and replay.</li>
+          <li>Signed block proposals and adaptive SHA-256 PoW.</li>
+        </ul>
+      </div>
+      <div class="col no">
+        <h4><span class="dot"></span> What it does not claim</h4>
+        <ul>
+          <li>That a model hash proves a training procedure ran.</li>
+          <li>That verification is cheaper than re-execution.</li>
+          <li>That GPU or stochastic training are consensus-valid.</li>
+          <li>That the P2P layer resists an Internet-scale adversary.</li>
+          <li>That the ERC-20 contract is a trustless bridge.</li>
+          <li>That Mera has a price, a market, or a future listing.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p style="margin-top:24px">
+      These are not bugs to be fixed in the next release. They are the
+      research problems the field has been circling for years, and
+      MLabChain's value is partly in stating them clearly.
+    </p>
+
+    <hr>
+
+    <p class="muted">
+      Next: <a href="mera.html" style="color:var(--amber)">the Mera unit →</a>
+    </p>
+
+  </article>
+</div>
+
+<div class="pager">
+  <a href="industry.html" class="prev">
+    <span class="dir">← Previous</span>
+    <span class="ttl">The industry</span>
+    <span class="sub">Where real value accrues</span>
+  </a>
+  <a href="mera.html" class="next">
+    <span class="dir">Next →</span>
+    <span class="ttl">The Mera unit</span>
+    <span class="sub">Supply, issuance, wallets, transfers</span>
+  </a>
+</div>
+
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="mlabchain.html">Protocol</a> ·
+        <a href="mera.html">Mera</a> ·
+        <a href="docs.html">Docs</a> ·
+        <a href="about.html">About</a>
+      </div>
+    </div>
+    <div class="foot-right"><img src="assets/mlabchain_txt.png" alt=""></div>
+  </div>
+  <div class="foot-tagline">Proof of Scientific Work</div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

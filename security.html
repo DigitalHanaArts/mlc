@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Security Notes — MLabChain</title>
+<meta name="description" content="Security notes for MLabChain v0.3: what is defended, what is not, remaining trust assumptions, known weaknesses, and the production checklist.">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html"><span class="pulse"></span><img src="assets/mlabchain.png" alt="">MLabChain</a>
+    <div class="nav-menu">
+      <a href="index.html#idea">Idea</a>
+      <a href="index.html#pipe">Pipeline</a>
+      <a href="index.html#mera">Mera</a>
+      <div class="nav-drop">
+        <button type="button">Learn</button>
+        <div class="nav-drop-menu">
+          <a href="blockchain.html">Blockchain Primer</a>
+          <a href="industry.html">Industry Landscape</a>
+          <a href="science.html">Proof-of-Scientific-Work</a>
+          <a href="protocol.html">MERA Protocol</a>
+          <a href="architecture.html">Architecture</a>
+          <a href="security.html" aria-current="page">Security Notes</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+      </div>
+      <a href="index.html#start">Start</a>
+    </div>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="index.html">Home</a>
+      <span class="sep">/</span>
+      <span class="here">Security Notes</span>
+    </nav>
+    <div class="eyebrow">Learn · 06</div>
+    <h1 class="page-title">Security, <em>honestly</em><br>stated.</h1>
+    <p class="page-lede">
+      What v0.3 defends against, what it does not, and what a production
+      deployment would need before it could be called an audited
+      mainnet. Every claim here is backed by a specific line in the
+      code, or explicitly marked as an unsolved problem.
+    </p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="prose-layout">
+
+    <aside class="toc">
+      <h5>On this page</h5>
+      <ol>
+        <li><a href="#posture">Security posture</a></li>
+        <li><a href="#defends">What it defends against</a></li>
+        <li><a href="#not">What it does not</a></li>
+        <li><a href="#crypto">Cryptographic choices</a></li>
+        <li><a href="#known">Known weaknesses</a></li>
+        <li><a href="#operational">Operational security</a></li>
+        <li><a href="#checklist">Production checklist</a></li>
+      </ol>
+    </aside>
+
+    <article class="prose">
+
+      <h2 id="posture">Security posture</h2>
+      <p>
+        MLabChain is a reference testnet. It has not been audited, has
+        not been fuzzed, and has not been subjected to adversarial
+        testing at Internet scale. It is suitable for experimentation,
+        for research, and for local runs on a single machine.
+      </p>
+      <p>
+        The project's security philosophy is to state every assumption
+        explicitly, in the code, in the docs, and on this page. A reader
+        should be able to look at any claim and find the mechanism that
+        backs it, or find the acknowledgement that it is not backed at
+        all.
+      </p>
+
+      <div class="callout bad">
+        <h5>Do not use MLabChain for anything of value</h5>
+        <p>
+          Do not store significant assets on it. Do not treat the wallet
+          as secure storage. Do not present Mera as an investment. The
+          project is a scientific research tool, and it should be
+          evaluated as one.
+        </p>
+      </div>
+
+      <h2 id="defends">What v0.3 defends against</h2>
+      <p>
+        Five categories of attack have explicit defences in the code.
+      </p>
+
+      <h3>1 · Transaction forgery</h3>
+      <p>
+        Every transaction carries an Ed25519 signature over a canonical
+        message. The core checks that the sender address is derived from
+        the included public key and that the signature verifies against
+        the message. A transaction whose signature is invalid is
+        rejected before it enters the mempool.
+      </p>
+      <p>
+        Multisig transactions require <code>m</code> valid signatures
+        from the declared key set, with the keys sorted canonically and
+        free of duplicates.
+      </p>
+
+      <h3>2 · Replay and stale nonces</h3>
+      <p>
+        Every account has a monotonic nonce. A transaction from an
+        account is valid only if its nonce equals
+        <code>account.nonce + pending_count + 1</code>. Signed
+        transactions cannot be replayed, even after the account has
+        submitted other pending transactions.
+      </p>
+
+      <h3>3 · Double-spend within the mempool</h3>
+      <p>
+        The mempool enforces per-sender balance reservation. When a
+        sender submits a transfer, the amount and fee are reserved
+        against the account balance for the lifetime of the pending
+        transaction. A second transfer that would over-spend the
+        unreserved balance is rejected.
+      </p>
+
+      <h3>4 · Tampering with the chain</h3>
+      <p>
+        Every block hash is recomputed during validation. Every Merkle
+        root is recomputed over the block's transactions. Every
+        producer signature is verified. Every cumulative work value is
+        checked. If a single byte of any block is changed, validation
+        fails at that block.
+      </p>
+      <p>
+        The database is also cross-checked against a fresh replay from
+        genesis. A hand-edited <code>accounts</code> row is detected by
+        comparing every account's balance, nonce, and authorization key
+        against the replay result.
+      </p>
+
+      <h3>5 · Supply-cap violations</h3>
+      <p>
+        Every reward and every faucet mint is checked against the
+        remaining supply before the state transition is applied. A
+        transaction that would push the total supply above
+        <code>MAX_SUPPLY</code> is rejected.
+      </p>
+
+      <h2 id="not">What v0.3 does not defend against</h2>
+      <p>
+        This is the more important list. Each entry is a real limitation,
+        not a theoretical concern.
+      </p>
+
+      <h3>Fabricated ML metrics</h3>
+      <p>
+        The core validates that the reward is arithmetically consistent
+        with the submitted metrics. It does not validate that the
+        metrics are honest. A malicious submitter can sign an
+        <code>ML_WORK</code> transaction with a fabricated
+        <code>nmse_scaled</code> and receive the corresponding reward.
+      </p>
+      <p>
+        The only defence is the Python <code>verify-ml</code> audit,
+        which re-executes the training and compares. This is a
+        post-hoc audit performed by whoever wants to check, not a
+        consensus rule enforced by every node.
+      </p>
+
+      <h3>Wall-time fabrication</h3>
+      <p>
+        Wall time is recorded as an audit metric and is not a minting
+        input. A miner can report any value without affecting issuance.
+        The field's only use is as scientific provenance.
+      </p>
+
+      <h3>P2P denial of service</h3>
+      <p>
+        The wire protocol is line-based and unauthenticated. A peer can
+        spam <code>TX|...</code> or <code>BLOCK|...</code> messages at
+        line rate. There is no rate limiting, no peer scoring, no
+        connection quotas, and no message size limit on the server side
+        beyond the implicit limits of the operating system.
+      </p>
+
+      <h3>Eclipse attacks</h3>
+      <p>
+        There is no peer discovery and no anti-eclipse mechanism. A node
+        connects only to peers that are manually configured. An attacker
+        who controls all of a node's configured peers can lie about the
+        chain tip and the cumulative work, and the node will not notice.
+      </p>
+
+      <h3>Sybil identities</h3>
+      <p>
+        Creating an address is free. An attacker can generate thousands
+        of Ed25519 keypairs, register many challenges, and farm the
+        maximum reward from each. The challenge bond and per-proposer
+        limits are per-address, not per-entity. There is no proof of
+        personhood, no staking requirement, and no account age rule.
+      </p>
+
+      <h3>Duplicate ML work</h3>
+      <p>
+        Two miners who train different models against the same challenge
+        both get paid, subject to the marginal reward rule. There is no
+        first-mover priority beyond the challenge's current best
+        quality. The marginal reward rule reduces the payout for later
+        submissions but does not eliminate it.
+      </p>
+
+      <h3>Withholding and selfish mining</h3>
+      <p>
+        A miner who finds a valid block can choose not to broadcast it.
+        There is no mechanism that forces publication. This is standard
+        for PoW chains; the mitigation is economic (a withheld block
+        earns nothing) rather than cryptographic.
+      </p>
+
+      <h3>Key compromise</h3>
+      <p>
+        If an account's private key is compromised, an attacker can
+        transfer the balance, rotate the key, and submit ML work in the
+        account's name. The wallet file is encrypted with Scrypt +
+        AES-GCM, which raises the cost of a brute-force attack against
+        the password, but does not prevent a compromise from a keylogger
+        or a compromised host.
+      </p>
+
+      <h3>Faucet abuse on devnet</h3>
+      <p>
+        On a devnet chain, the faucet can be called by any address for
+        any amount up to the supply cap. This is intentional. On a
+        mainnet chain the faucet is disabled at genesis and cannot be
+        re-enabled.
+      </p>
+
+      <h3>Rollback after a 51% attack</h3>
+      <p>
+        The fork choice rule is highest cumulative work. An attacker
+        with more than half the network's hashrate can build a longer
+        chain that excludes a specific transaction, and the network
+        will reorg to it. There is no economic finality. At the v0.3
+        difficulty levels, this is trivially achievable on a local
+        testnet.
+      </p>
+
+      <h3>Bridge trust</h3>
+      <p>
+        The ERC-20 contract in <code>contracts/MeraScientific.sol</code>
+        grants a <code>MINTER_ROLE</code> to a single address. Whoever
+        holds that key can mint up to the cap at any time. This is a
+        full centralization of EVM-side issuance. It is not a trustless
+        bridge, and it does not pretend to be one.
+      </p>
+
+      <h3>Regulatory and legal exposure</h3>
+      <p>
+        A transferable token that people treat as having monetary value
+        brings securities law, tax law, and anti-money-laundering rules
+        in most jurisdictions. This codebase provides no compliance
+        tooling. Any deployment that involves real money is a
+        regulatory question before it is a technical one.
+      </p>
+
+      <h2 id="crypto">Cryptographic choices</h2>
+      <p>
+        Every primitive is standard, and every parameter is documented.
+      </p>
+
+      <h3>Hashing</h3>
+      <p>
+        SHA-256 throughout. Used for transaction IDs, block hashes,
+        Merkle roots, address payloads, challenge manifests, dataset
+        commitments, and artifact hashes. No novel hash construction is
+        used anywhere.
+      </p>
+
+      <h3>Signatures</h3>
+      <p>
+        Ed25519 via OpenSSL's <code>EVP_PKEY_ED25519</code>. Chosen for
+        its small signatures (64 bytes), fast verification, and the
+        absence of parameter choices. The implementation rejects
+        non-canonical signatures by default.
+      </p>
+
+      <h3>Wallet encryption</h3>
+      <p>
+        Scrypt with parameters <code>N=2^15, r=8, p=1</code>, followed
+        by AES-256-GCM with a 12-byte nonce and a bound authentication
+        tag of <code>MERA-WALLET-V2</code>. The KDF parameters are
+        stored in the wallet file so they can be raised in a future
+        version without invalidating existing wallets.
+      </p>
+
+      <h3>Multisig</h3>
+      <p>
+        Ed25519 signatures from an <code>m-of-n</code> set. The keys
+        are sorted canonically before address derivation and before
+        verification. The threshold and key set are included in the
+        transaction and compared against the derived address.
+      </p>
+
+      <h3>Address checksums</h3>
+      <p>
+        Every address has an 8-character checksum suffix derived from
+        <code>SHA256("MERA-ADDR-V3|" + prefix)</code>. A typo in the
+        payload portion of an address will not match the checksum, and
+        the core will reject the address. This prevents the most common
+        category of user error.
+      </p>
+
+      <h2 id="known">Known weaknesses in the reference implementation</h2>
+      <p>
+        These are specific bugs or design choices in the v0.3 code that
+        a reader should know about. Some are being fixed in v0.3.1;
+        others are noted for future work.
+      </p>
+
+      <ul>
+        <li>
+          <strong>Client-side reward estimate.</strong> The Python
+          client computes a pessimistic reward estimate before calling
+          the core. The estimate is not always correct — it uses the
+          full quality against the baseline rather than the marginal
+          delta against the challenge's current best. The core catches
+          this and rejects, but the error message is confusing.
+        </li>
+        <li>
+          <strong>Wallet overwrite.</strong> <code>create-wallet</code>
+          overwrites an existing wallet file without a
+          <code>--force</code> flag or a confirmation prompt. Running it
+          twice destroys the first wallet.
+        </li>
+        <li>
+          <strong>Artifact existence.</strong> <code>verify-ml</code>
+          recomputes the model hash from memory but does not check that
+          the recorded artifact file still exists on disk. A user who
+          deletes the model file after mining will still see
+          <code>STATUS: VERIFIED</code>.
+        </li>
+        <li>
+          <strong>Unused LSWU.</strong> The LSWU score is computed and
+          stored in every <code>ML_WORK</code> transaction, but no
+          consensus rule consumes it and no command displays it in a
+          structured way. It is audit-only, but the docs do not yet
+          explain what an auditor would do with it.
+        </li>
+        <li>
+          <strong>Test coverage gaps.</strong> Multisig, key rotation,
+          governance timelock, reorg, block relay, transaction relay,
+          fee market, mempool quotas, schema migration, challenge
+          budget exhaustion, duplicate claim, retargeting, and timestamp
+          bounds are all implemented but not covered by tests in the
+          v0.3.0 release.
+        </li>
+        <li>
+          <strong>Windows and macOS CI.</strong> The GitHub Actions
+          workflow builds and tests on Linux only. The Windows and
+          macOS build paths exist but are not continuously tested.
+        </li>
+      </ul>
+
+      <h2 id="operational">Operational security</h2>
+      <p>
+        If you run a node, four practices matter.
+      </p>
+
+      <h3>1 · Use a dedicated password</h3>
+      <p>
+        The wallet password must be at least 10 characters and should
+        not be reused from any other system. Set
+        <code>MERAWALLET_PASSWORD</code> in a way that does not appear
+        in your shell history — a secrets manager, a temporary
+        environment, or an interactive prompt.
+      </p>
+
+      <h3>2 · Back up the wallet separately from the chain</h3>
+      <p>
+        The SQLite database and the wallet file are separate. A backup
+        of the database does not include the wallet, and a backup of the
+        wallet does not include the chain. Use
+        <code>wallet-backup</code> for the wallet and
+        <code>backup</code> for the chain, and store them in different
+        places.
+      </p>
+
+      <h3>3 · Do not expose the node to the public Internet</h3>
+      <p>
+        The P2P protocol has no authentication, no encryption, and no
+        rate limiting. A node listening on <code>0.0.0.0</code> is
+        reachable by anyone. Bind to <code>127.0.0.1</code> for local
+        testing and use a firewall or a VPN for anything else.
+      </p>
+
+      <h3>4 · Treat the chain file as public</h3>
+      <p>
+        Every transaction on the chain is readable by anyone with access
+        to the database. Do not record anything in a note field that you
+        would not want published. This is inherent to the design.
+      </p>
+
+      <h2 id="checklist">Production checklist</h2>
+      <p>
+        Before any deployment could honestly be called an audited
+        mainnet, all of the following must be complete.
+      </p>
+
+      <ol>
+        <li>Independent cryptographic audit of the C++ core.</li>
+        <li>Independent consensus audit against the protocol specification.</li>
+        <li>Fuzzing of all transaction and block parsers.</li>
+        <li>Differential replay tests across platforms (Linux, macOS, Windows, ARM, x86_64).</li>
+        <li>Deterministic build pipeline with signed releases.</li>
+        <li>Peer discovery and anti-eclipse design.</li>
+        <li>Rate limiting, peer scoring, and connection quotas.</li>
+        <li>A chain checkpoint or finality strategy.</li>
+        <li>Audited governance and multisig controls.</li>
+        <li>Audited bridge, or removal of the bridge dependency.</li>
+        <li>Economic simulation of fee burn and scientific issuance.</li>
+        <li>Formal specification of the verifier bytecode or semantics for every paid ML class.</li>
+        <li>zkML or equivalent verifiable-computation layer before paying arbitrary GPU or ML workloads.</li>
+        <li>Legal review of the token's regulatory status in every jurisdiction where it will be offered or used.</li>
+      </ol>
+
+      <div class="callout warn">
+        <h5>The four research problems remain</h5>
+        <p>
+          Even after the checklist above, four problems cannot be
+          resolved by engineering:
+        </p>
+        <ul style="margin-bottom:0;">
+          <li>General ML proofs (requires zkML or equivalent).</li>
+          <li>Stochastic and GPU training verification.</li>
+          <li>Permissionless P2P hardening at Internet scale.</li>
+          <li>Trustless L1↔EVM bridging.</li>
+        </ul>
+      </div>
+
+      <div class="callout good">
+        <h5>Take-away</h5>
+        <p>
+          v0.3 defends against transaction forgery, replay, double-spend
+          within the mempool, chain tampering, and supply-cap violations.
+          It does not defend against fabricated ML metrics, P2P denial
+          of service, eclipse attacks, Sybil identities, key compromise,
+          or bridge trust. Every one of these is stated in the docs and
+          visible in the code.
+        </p>
+      </div>
+
+    </article>
+  </div>
+</main>
+
+<nav class="next-prev">
+  <a href="architecture.html">
+    <span class="lbl">← Previous</span>
+    <span class="ttl">Architecture</span>
+  </a>
+  <a href="faq.html" class="next">
+    <span class="lbl">Next →</span>
+    <span class="ttl">Frequently asked questions</span>
+  </a>
+</nav>
+
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="science.html">Science</a> ·
+        <a href="protocol.html">Protocol</a> ·
+        <a href="faq.html">FAQ</a>
+      </div>
+    </div>
+    <div class="foot-right">
+      <img src="assets/mlabchain_txt.png" alt="">
+    </div>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

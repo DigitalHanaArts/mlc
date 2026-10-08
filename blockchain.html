@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What is a blockchain? — MLabChain</title>
+<meta name="description" content="A plain-language introduction to blockchain technology: what a chain is, what hashing and signatures do, what consensus means, and what a blockchain is not.">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html"><span class="pulse"></span><img src="assets/mlabchain.png" alt="">MLabChain</a>
+    <div class="nav-menu">
+      <a href="index.html#idea">Idea</a>
+      <a href="index.html#pipe">Pipeline</a>
+      <a href="index.html#mera">Mera</a>
+      <div class="nav-drop">
+        <button type="button">Learn</button>
+        <div class="nav-drop-menu">
+          <a href="blockchain.html" aria-current="page">Blockchain Primer</a>
+          <a href="industry.html">Industry Landscape</a>
+          <a href="science.html">Proof-of-Scientific-Work</a>
+          <a href="protocol.html">MERA Protocol</a>
+          <a href="architecture.html">Architecture</a>
+          <a href="security.html">Security Notes</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+      </div>
+      <a href="index.html#start">Start</a>
+    </div>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="index.html">Home</a>
+      <span class="sep">/</span>
+      <span class="here">Blockchain Primer</span>
+    </nav>
+    <div class="eyebrow">Learn · 01</div>
+    <h1 class="page-title">What is a <em>blockchain</em>,<br>really?</h1>
+    <p class="page-lede">
+      Strip away the tokens and the hype, and a blockchain is a very
+      specific engineering idea: a list of records that is expensive to
+      rewrite, cheap to verify, and does not require anyone's permission
+      to read. This page explains what that means, what makes it work,
+      and — just as importantly — what it cannot do.
+    </p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="prose-layout">
+
+    <!-- TOC -->
+    <aside class="toc">
+      <h5>On this page</h5>
+      <ol>
+        <li><a href="#what">What it is</a></li>
+        <li><a href="#three">Three ingredients</a></li>
+        <li><a href="#hash">Hashing</a></li>
+        <li><a href="#signatures">Signatures</a></li>
+        <li><a href="#consensus">Consensus</a></li>
+        <li><a href="#what-not">What it is not</a></li>
+        <li><a href="#variants">Variants</a></li>
+        <li><a href="#why">Why it matters</a></li>
+      </ol>
+    </aside>
+
+    <article class="prose">
+
+      <h2 id="what">What it is</h2>
+      <p>
+        A blockchain is an append-only list of records, called
+        <em>blocks</em>, where each block commits to the one before it by
+        including the previous block's hash in its own header. If anyone
+        changes an earlier block, its hash changes, which breaks the hash
+        the next block expects, which breaks the one after that. The whole
+        chain "falls over" if you try to tamper with it, and any reader
+        can detect the tampering by recomputing the hashes.
+      </p>
+      <p>
+        That is the entire cryptographic idea. Everything else — mining,
+        consensus, tokens, smart contracts, DeFi — is built on top of
+        this one property.
+      </p>
+
+      <div class="callout">
+        <h5>Plain-language version</h5>
+        <p>
+          A blockchain is a notebook where every page contains a
+          fingerprint of the previous page. If you rip out page 5 and
+          replace it, page 6 stops matching it, and everyone notices.
+        </p>
+      </div>
+
+      <h2 id="three">The three ingredients</h2>
+      <p>
+        Every blockchain, from Bitcoin to a private enterprise ledger,
+        combines the same three mechanisms:
+      </p>
+      <ol>
+        <li><strong>Hashing.</strong> A function that turns any data into a fixed-length fingerprint. Deterministic, one-way, collision-resistant.</li>
+        <li><strong>Digital signatures.</strong> A way for one party to prove that they authorised a specific record, without revealing a secret.</li>
+        <li><strong>Consensus.</strong> A rule for deciding which version of the chain is the real one when two versions exist.</li>
+      </ol>
+      <p>
+        If any of these is missing, the system is not a blockchain — it is
+        just a database with extra steps.
+      </p>
+
+      <h2 id="hash">1 · Hashing</h2>
+      <p>
+        A cryptographic hash function takes any input and returns a
+        fixed-length output. SHA-256, the most common, returns 256 bits —
+        64 hexadecimal characters. Three properties make it useful:
+      </p>
+      <ul>
+        <li><strong>Deterministic.</strong> The same input always gives the same output.</li>
+        <li><strong>One-way.</strong> Given an output, you cannot recover the input faster than by brute force.</li>
+        <li><strong>Collision-resistant.</strong> Finding two different inputs with the same output is computationally infeasible.</li>
+      </ul>
+      <p>
+        In a blockchain, hashes are used in two places. First, as a
+        content-address: the hash of a file is a compact way to commit to
+        its exact bytes. Second, as a link: each block's header contains
+        the previous block's hash, chaining the history together.
+      </p>
+      <pre><code><span class="c"># The hash of "hello" in SHA-256</span>
+2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
+
+<span class="c"># The hash of "hello." — one extra character</span>
+ce06092fc078ba9dd364a3bb66a1bf35a87b9db2c6c1e22b63bea8d8d18e4c5e
+
+<span class="c"># Completely different. That is the point.</span></code></pre>
+
+      <h3>Merkle trees</h3>
+      <p>
+        When a block contains many transactions, hashing each transaction
+        and then hashing pairs of hashes upward produces a single value
+        called the <em>Merkle root</em>. This root goes into the block
+        header, so a single hash commits to every transaction in the
+        block. A verifier can prove that a specific transaction is in the
+        block by showing a logarithmic-sized path of sibling hashes,
+        rather than downloading the whole block.
+      </p>
+
+      <h2 id="signatures">2 · Digital signatures</h2>
+      <p>
+        A signature scheme has three parts: a key generation algorithm
+        that produces a public/private keypair, a signing algorithm that
+        uses the private key, and a verification algorithm that uses the
+        public key. The security property is simple: given a public key
+        and a message and a signature, anyone can check that the holder
+        of the matching private key signed that exact message. Nobody
+        else can produce such a signature.
+      </p>
+      <p>
+        In a blockchain, signatures are what authorise transactions. When
+        you send Mera, you sign a message describing the transfer with
+        your private key. Every other node can verify the signature
+        against your public key without ever seeing your private key.
+        That is what makes the system trustless: nobody has to trust you,
+        they only have to check a mathematical fact.
+      </p>
+
+      <div class="callout warn">
+        <h5>Keys are not passwords</h5>
+        <p>
+          A lost password can be reset. A lost private key cannot. There
+          is no "forgot my key" mechanism in a blockchain, because there
+          is no authority to reset it. In MLabChain, the wallet file is
+          encrypted with a password, but if you lose both the file and
+          the password, the balance is gone.
+        </p>
+      </div>
+
+      <h2 id="consensus">3 · Consensus</h2>
+      <p>
+        The hardest problem. If two miners produce a valid block at the
+        same height, the network has to decide which one is the "real"
+        block. Different chains answer this differently.
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Mechanism</th><th>How it decides</th><th>Trade-off</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Nakamoto PoW</td>
+            <td>Longest chain by cumulative hash work wins.</td>
+            <td>Simple, battle-tested, energy-heavy.</td>
+          </tr>
+          <tr>
+            <td>BFT / PBFT</td>
+            <td>A supermajority of validators vote on each block.</td>
+            <td>Fast finality, requires a known validator set.</td>
+          </tr>
+          <tr>
+            <td>Proof of Stake</td>
+            <td>Validators are chosen in proportion to their stake.</td>
+            <td>Energy-light, but "stake" is a new centralisation axis.</td>
+          </tr>
+          <tr>
+            <td>PoA / committee</td>
+            <td>A named set of authorities signs blocks.</td>
+            <td>Fast, cheap, but trust is explicit.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        MLabChain uses a hybrid: <strong>cumulative-work fork choice for
+        block sealing</strong> (Nakamoto-style PoW, at low difficulty),
+        plus an <strong>Ed25519-signed block proposal</strong> that
+        pins who produced each block. Scientific rewards are a separate
+        mechanism altogether — see
+        <a href="science.html">Proof-of-Scientific-Work</a>.
+      </p>
+
+      <h2 id="what-not">What a blockchain is not</h2>
+      <p>
+        The word has been stretched to cover a great deal that it does
+        not mean. It is worth being specific.
+      </p>
+
+      <div class="split">
+        <div class="col yes">
+          <h4><span class="dot"></span> A blockchain does</h4>
+          <ul>
+            <li>Provide a tamper-evident history.</li>
+            <li>Allow anyone to verify a record without trusting the author.</li>
+            <li>Let multiple parties agree on a shared state without a central server.</li>
+            <li>Survive the loss of any individual node, if the network is large enough.</li>
+          </ul>
+        </div>
+        <div class="col no">
+          <h4><span class="dot"></span> A blockchain does not</h4>
+          <ul>
+            <li>Store large data efficiently. It is an index, not a warehouse.</li>
+            <li>Make bad data good. Garbage in, immutable garbage out.</li>
+            <li>Solve governance. Someone still has to decide what counts.</li>
+            <li>Guarantee privacy. Public chains are public.</li>
+            <li>Remove trust. It relocates trust to different places.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2 id="variants">Variants of "blockchain"</h2>
+      <p>
+        Three broad families, in increasing order of decentralisation:
+      </p>
+      <ul>
+        <li><strong>Private / enterprise.</strong> A consortium runs the nodes. Fast, cheap, permissioned. Trust is in the consortium. Hyperledger Fabric is the canonical example.</li>
+        <li><strong>Public permissioned.</strong> Anyone can read, a known set can write. Good for regulated use cases.</li>
+        <li><strong>Public permissionless.</strong> Anyone can read and write, subject to economic rules. Bitcoin, Ethereum, and most "crypto" chains.</li>
+      </ul>
+      <p>
+        MLabChain is in the first family. It is a local, single-writer
+        ledger with an optional multi-node testnet mode. It is not
+        permissionless and does not pretend to be.
+      </p>
+
+      <h2 id="why">Why this matters for MLabChain</h2>
+      <p>
+        The value of a blockchain for scientific work is not
+        decentralisation for its own sake. It is that a researcher can
+        <em>prove</em> what they did, without asking anyone's permission
+        and without depending on a service that might disappear.
+      </p>
+      <p>
+        When you register an ML training run on MLabChain, you get a
+        signed, hash-linked record. Six months later, you can re-run the
+        training from the recorded config and check that the metrics
+        still match. Nobody else has to be involved. No server has to be
+        online. That is a modest, useful property, and it is the reason
+        the project exists.
+      </p>
+
+      <div class="callout good">
+        <h5>Take-away</h5>
+        <p>
+          A blockchain is a hash chain plus signatures plus a consensus
+          rule. It is a specific technical answer to a specific technical
+          problem. The rest is application.
+        </p>
+      </div>
+
+    </article>
+  </div>
+</main>
+
+<nav class="next-prev">
+  <a href="index.html">
+    <span class="lbl">← Previous</span>
+    <span class="ttl">MLabChain home</span>
+  </a>
+  <a href="industry.html" class="next">
+    <span class="lbl">Next →</span>
+    <span class="ttl">The blockchain industry</span>
+  </a>
+</nav>
+
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="science.html">Science</a> ·
+        <a href="protocol.html">Protocol</a> ·
+        <a href="faq.html">FAQ</a>
+      </div>
+    </div>
+    <div class="foot-right">
+      <img src="assets/mlabchain_txt.png" alt="">
+    </div>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

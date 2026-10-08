@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MLabChain — Proof-of-Scientific-Work</title>
+<meta name="description" content="MLabChain records machine-learning work on a signed, replayable ledger and issues Mera for the submissions that measurably improve a pinned scientific baseline.">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+/* ---------- landing-only: hero, ticker, film, pipe, coin, formula ---------- */
+.hero{
+  position:relative;
+  min-height:100vh; min-height:100svh;
+  display:flex; flex-direction:column; justify-content:center;
+  padding:120px 0 80px;
+  overflow:hidden; border-top:none;
+}
+#heroCanvas{ position:absolute; inset:0; width:100%; height:100%; z-index:0; opacity:.9; }
+.hero-glow{
+  position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:
+    radial-gradient(55% 45% at 50% 40%, rgba(245,182,66,.10), transparent 75%),
+    radial-gradient(35% 40% at 78% 70%, rgba(78,205,196,.07), transparent 70%),
+    radial-gradient(30% 35% at 20% 80%, rgba(232,93,117,.05), transparent 70%);
+}
+.hero-in{ position:relative; z-index:3; }
+.hero-badge{
+  display:inline-flex; align-items:center; gap:14px;
+  padding:8px 16px; border:1px solid var(--line-hi); border-radius:100px;
+  font-family:var(--mono); font-size:.68rem;
+  letter-spacing:.2em; text-transform:uppercase;
+  color:var(--fg-2); margin-bottom:36px;
+  backdrop-filter:blur(8px); background:rgba(5,6,10,.4);
+  animation:fadeIn 1.2s var(--ease-o) both;
+}
+.hero-badge .pulse{
+  width:5px; height:5px; border-radius:50%;
+  background:var(--lime); box-shadow:0 0 10px var(--lime);
+  animation:pulse 2.4s ease-in-out infinite;
+}
+.hero-badge b{ color:var(--amber); font-weight:500; }
+.hero-title{
+  font-family:var(--display); font-style:italic; font-weight:400;
+  font-size:clamp(2.8rem,9vw,8.4rem);
+  line-height:.92; letter-spacing:-.04em;
+  margin-bottom:40px;
+  animation:fadeUp 1.4s .15s var(--ease-o) both;
+}
+.hero-title .ln{ display:block; }
+.hero-title .l2{ padding-left:clamp(16px,5vw,80px); }
+.hero-title .l3{ padding-left:clamp(32px,10vw,160px); }
+.hero-title em{
+  font-style:italic;
+  background:linear-gradient(110deg,var(--amber) 0%,var(--amber-2) 25%,var(--teal) 55%,var(--rose) 90%);
+  -webkit-background-clip:text; background-clip:text;
+  color:transparent; background-size:300% 100%;
+  animation:sweep 9s ease-in-out infinite;
+}
+.hero-sub{
+  max-width:54ch; font-size:clamp(1rem,1.4vw,1.15rem);
+  color:var(--fg-1); margin-bottom:48px;
+  animation:fadeUp 1.4s .3s var(--ease-o) both;
+}
+.hero-cta{ display:flex; flex-wrap:wrap; gap:14px; animation:fadeUp 1.4s .45s var(--ease-o) both; }
+.hero-stats{
+  position:absolute; right:var(--gut); bottom:clamp(80px,10vw,120px);
+  display:flex; flex-direction:column; gap:20px;
+  text-align:right; font-family:var(--mono);
+  animation:fadeIn 1.6s .6s var(--ease-o) both; z-index:3;
+}
+.hero-stat .v{
+  font-family:var(--display); font-style:italic;
+  font-size:1.9rem; color:var(--amber);
+  line-height:1; letter-spacing:-.02em;
+}
+.hero-stat .l{
+  font-size:.62rem; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--fg-3); margin-top:5px;
+}
+@media (max-width:1024px){
+  .hero-stats{ position:static; flex-direction:row; gap:36px; text-align:left; margin-top:60px; }
+  .hero-stat .v{ font-size:1.4rem; }
+}
+.hero-lockup{
+  position:absolute; top:clamp(120px,15vh,180px); right:var(--gut);
+  display:flex; align-items:center; gap:22px;
+  animation:fadeIn 1.6s .5s var(--ease-o) both;
+  z-index:3; pointer-events:none;
+}
+.hero-lockup img{
+  height:clamp(56px,6vw,92px); width:auto;
+  filter:drop-shadow(0 0 30px rgba(245,182,66,.35));
+  animation:float 6s ease-in-out infinite;
+}
+.hero-lockup img:last-child{ animation-delay:-3s; }
+.hero-lockup .sep{
+  width:1px; height:36px;
+  background:linear-gradient(to bottom,transparent,var(--line-hi),transparent);
+}
+@media (max-width:1024px){
+  .hero-lockup{ position:static; margin-bottom:36px; animation:fadeIn 1.2s .1s var(--ease-o) both; }
+}
+@keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(26px);} to{opacity:1; transform:none;} }
+@keyframes sweep{ 0%,100%{ background-position:0% 50%; } 50%{ background-position:100% 50%; } }
+@keyframes float{ 0%,100%{ transform:translateY(0) rotate(0deg); } 50%{ transform:translateY(-6px) rotate(1deg); } }
+.scroll-cue{
+  position:absolute; left:var(--gut); bottom:32px;
+  display:flex; align-items:center; gap:14px;
+  font-family:var(--mono); font-size:.62rem;
+  letter-spacing:.28em; text-transform:uppercase;
+  color:var(--fg-3); z-index:3;
+}
+.scroll-cue .rail{
+  width:1px; height:48px;
+  background:linear-gradient(to bottom,var(--amber),transparent);
+  transform-origin:top; animation:railDrop 2.4s var(--ease-io) infinite;
+}
+@keyframes railDrop{ 0%{ transform:scaleY(0); opacity:0;} 40%{ transform:scaleY(1); opacity:1;} 100%{ transform:scaleY(1); opacity:0;} }
+
+/* ticker */
+.ticker{
+  position:relative; padding:28px 0;
+  border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+  background:var(--bg-1); overflow:hidden;
+}
+.ticker::before,.ticker::after{
+  content:""; position:absolute; top:0; bottom:0; width:140px; z-index:3; pointer-events:none;
+}
+.ticker::before{ left:0; background:linear-gradient(to right,var(--bg-1),transparent); }
+.ticker::after{ right:0; background:linear-gradient(to left,var(--bg-1),transparent); }
+.ticker-track{ display:flex; width:max-content; animation:tickerSlide 60s linear infinite; }
+.ticker-track:hover{ animation-play-state:paused; }
+.ticker-row{
+  display:flex; gap:60px; padding-right:60px;
+  font-family:var(--display); font-style:italic;
+  font-size:clamp(1.8rem,3.6vw,3.2rem);
+  letter-spacing:-.02em; white-space:nowrap;
+  color:var(--fg-2);
+}
+.ticker-row span{ display:flex; align-items:center; gap:60px; }
+.ticker-row span::after{ content:"◇"; color:var(--amber); font-size:.5em; font-style:normal; }
+@keyframes tickerSlide{ from{ transform:translateX(0);} to{ transform:translateX(-50%);} }
+
+/* film */
+.film{ position:relative; background:var(--bg); padding:0; }
+.film::before,.film::after{
+  content:""; position:absolute; left:0; right:0; height:24px; z-index:2;
+  background:repeating-linear-gradient(90deg,
+    transparent 0, transparent 12px,
+    var(--line) 12px, var(--line) 20px,
+    transparent 20px, transparent 32px);
+  opacity:.5; pointer-events:none;
+}
+.film::before{ top:0; } .film::after{ bottom:0; }
+.film-inner{ padding:24px 0; position:relative; }
+.film-head{
+  display:flex; align-items:center; gap:20px;
+  padding:0 var(--gut) 22px;
+  font-family:var(--mono); font-size:.68rem;
+  letter-spacing:.24em; text-transform:uppercase; color:var(--fg-3);
+  max-width:var(--max); margin:0 auto;
+}
+.film-head .rec{
+  width:10px; height:10px; border-radius:50%;
+  background:var(--coral); box-shadow:0 0 12px var(--coral);
+  animation:rec 1.8s ease-in-out infinite;
+}
+@keyframes rec{ 0%,100%{ opacity:1;} 50%{ opacity:.25;} }
+.film-head .time{ color:var(--amber); font-variant-numeric:tabular-nums; }
+.stage{
+  position:relative; aspect-ratio:21/9;
+  max-width:var(--max); margin:0 auto;
+  border:1px solid var(--line); border-radius:4px;
+  overflow:hidden; background:#000;
+  box-shadow:0 40px 80px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(245,182,66,.06);
+}
+#filmCanvas{ width:100%; height:100%; display:block; }
+.stage-overlay{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:22px 26px; pointer-events:none;
+  font-family:var(--mono); font-size:.66rem;
+  letter-spacing:.16em; text-transform:uppercase;
+  color:rgba(255,255,255,.75); text-shadow:0 1px 4px rgba(0,0,0,.8);
+}
+.stage-overlay .row{ display:flex; justify-content:space-between; align-items:center; gap:20px; }
+.stage-overlay .tag{
+  padding:5px 10px; border:1px solid rgba(245,182,66,.4); border-radius:2px;
+  background:rgba(5,6,10,.6); backdrop-filter:blur(4px);
+}
+.stage-overlay .tag.live{ color:var(--coral); border-color:rgba(255,92,68,.5); }
+.stage-overlay .crosshair{
+  position:absolute; width:24px; height:24px;
+  border:1px solid rgba(245,182,66,.55); pointer-events:none;
+}
+.stage-overlay .crosshair::before,
+.stage-overlay .crosshair::after{ content:""; position:absolute; background:rgba(245,182,66,.55); }
+.stage-overlay .crosshair::before{ left:50%; top:0; bottom:0; width:1px; transform:translateX(-50%); }
+.stage-overlay .crosshair::after{ top:50%; left:0; right:0; height:1px; transform:translateY(-50%); }
+.stage-caption{
+  max-width:var(--max); margin:0 auto; padding:22px var(--gut) 0;
+  font-family:var(--mono); font-size:.72rem;
+  letter-spacing:.1em; color:var(--fg-3);
+  display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap;
+}
+.stage-caption b{ color:var(--amber); font-weight:500; }
+
+/* pipe canvas */
+.pipe-wrap{
+  position:relative; margin-top:40px;
+  border:1px solid var(--line); border-radius:4px;
+  overflow:hidden; background:var(--bg-1); aspect-ratio:16/7;
+}
+#pipeCanvas{ width:100%; height:100%; display:block; }
+.pipe-legend{
+  position:absolute; left:24px; bottom:20px;
+  display:flex; flex-direction:column; gap:8px;
+  font-family:var(--mono); font-size:.66rem;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--fg-3); pointer-events:none;
+}
+.pipe-legend .li{ display:flex; align-items:center; gap:10px; }
+.pipe-legend .swatch{ width:22px; height:1px; }
+.pipe-legend .swatch.a{ background:var(--amber); }
+.pipe-legend .swatch.t{ background:var(--teal); }
+.pipe-legend .swatch.r{ background:var(--rose); }
+@media (max-width:640px){ .pipe-wrap{ aspect-ratio:4/3; } }
+
+/* coin */
+.mera-block{
+  display:grid; grid-template-columns:auto 1fr;
+  gap:clamp(32px,5vw,80px); align-items:center; margin-top:40px;
+}
+@media (max-width:880px){ .mera-block{ grid-template-columns:1fr; } }
+.coin{
+  position:relative; width:clamp(200px,26vw,320px); aspect-ratio:1;
+  display:grid; place-items:center; perspective:1000px;
+}
+.coin-inner{
+  width:100%; height:100%;
+  animation:coinSpin 14s linear infinite;
+  transform-style:preserve-3d; position:relative;
+}
+@keyframes coinSpin{ 0%{ transform:rotateY(0deg);} 100%{ transform:rotateY(360deg);} }
+.coin img{
+  width:100%; height:auto;
+  filter:drop-shadow(0 0 40px rgba(245,182,66,.35)) drop-shadow(0 0 80px rgba(232,93,117,.15));
+}
+.coin .ring{
+  position:absolute; inset:-14%;
+  border:1px dashed var(--line-hi); border-radius:50%;
+  animation:ringSpin 40s linear infinite reverse; pointer-events:none;
+}
+.coin .ring.outer{ inset:-26%; border-color:var(--amber-d); animation-duration:60s; }
+@keyframes ringSpin{ to{ transform:rotate(360deg);} }
+.mera-copy .h3{
+  font-family:var(--display); font-style:italic;
+  font-weight:400; font-size:2.4rem;
+  letter-spacing:-.02em; margin-bottom:14px;
+}
+.mera-copy p{ font-size:1rem; }
+
+/* formula */
+.formula{
+  margin-top:44px; padding:40px clamp(24px,4vw,54px);
+  border:1px solid var(--line); border-radius:6px;
+  background:linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  position:relative; overflow:hidden;
+}
+.formula::before{
+  content:""; position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(245,182,66,.09), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(78,205,196,.06), transparent 45%);
+  pointer-events:none;
+}
+.formula-in{ position:relative; z-index:1; }
+.formula-head{
+  display:flex; align-items:center; gap:14px;
+  margin-bottom:26px;
+  font-family:var(--mono); font-size:.68rem;
+  letter-spacing:.24em; text-transform:uppercase;
+  color:var(--fg-3);
+}
+.formula-head .bar{ flex:1; height:1px; background:var(--line); }
+.f-row{
+  display:grid; grid-template-columns:110px 1fr 130px; gap:22px;
+  padding:15px 0; border-bottom:1px solid var(--line);
+  font-family:var(--mono); font-size:.84rem;
+  opacity:.32; transition:opacity .5s var(--ease), color .5s var(--ease);
+  align-items:baseline;
+}
+.f-row:last-child{ border-bottom:none; }
+.f-row.hot{ opacity:1; }
+.f-row .lbl{ font-size:.62rem; letter-spacing:.2em; text-transform:uppercase; color:var(--fg-3); }
+.f-row .tok{ color:var(--fg-1); }
+.f-row.hot .tok{ color:var(--fg); }
+.f-row .val{
+  color:var(--teal); font-variant-numeric:tabular-nums;
+  text-align:right; font-weight:500;
+}
+.f-row.hot .val{ color:var(--amber-2); }
+@media (max-width:720px){
+  .f-row{ grid-template-columns:1fr; gap:4px; padding:12px 0; }
+  .f-row .val{ text-align:left; }
+}
+
+@media (prefers-reduced-motion:reduce){
+  #heroCanvas, #filmCanvas, #pipeCanvas{ display:none; }
+  .stage{ background:
+    radial-gradient(circle at 30% 40%, rgba(245,182,66,.15), transparent 60%),
+    radial-gradient(circle at 70% 60%, rgba(78,205,196,.1), transparent 60%),
+    var(--bg-1); }
+  .coin-inner{ animation:none; }
+}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html">
+      <span class="pulse"></span>
+      <img src="assets/mlabchain.png" alt="">
+      MLabChain
+    </a>
+    <div class="nav-menu">
+      <a href="about.html">About</a>
+      <a href="#idea">Idea</a>
+      <a href="docs.html">Docs</a>
+      <a href="#film">Blockchain</a>
+      <a href="#pipe">Pipeline</a>
+	  <a href="mlabchain.html">MLabChain</a>
+	  <a href="mera.html">Mera</a>
+      <a href="#boundary">Boundary</a>
+      <div class="nav-drop">
+        <button type="button">Learn</button>
+        <div class="nav-drop-menu">
+          <a href="blockchain.html">Blockchain Primer</a>
+          <a href="industry.html">Industry Landscape</a>
+          <a href="science.html">Proof-of-Scientific-Work</a>
+          <a href="protocol.html">MERA Protocol</a>
+          <a href="architecture.html">Architecture</a>
+          <a href="security.html">Security Notes</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+      </div>
+      <a href="#start">Start</a>
+    </div>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <canvas id="heroCanvas"></canvas>
+  <div class="hero-glow"></div>
+
+  <div class="wrap hero-in">
+    <div class="hero-lockup">
+      <img src="assets/mlabchain.png" alt="MLabChain">
+      <span class="sep"></span>
+      <img src="assets/MERA.png" alt="Mera">
+    </div>
+
+    <div class="hero-badge">
+      <span class="pulse"></span>
+      Mera <b>v0.3.0-dev1</b> · Devnet live
+    </div>
+
+    <h1 class="hero-title">
+      <span class="ln">A ledger that</span>
+      <span class="ln l2"><em>pays</em> for verified</span>
+      <span class="ln l3">machine work.</span>
+    </h1>
+
+    <p class="hero-sub">
+      MLabChain records machine-learning training runs as signed, replayable
+      transactions and issues a native unit called <strong>Mera</strong> for
+      the submissions that measurably improve a pinned scientific baseline.
+      Deterministic work is paid. Everything else is provenance.
+    </p>
+
+    <div class="hero-cta">
+      <a class="btn primary" href="#start"><span>Run the devnet</span><span class="arr">→</span></a>
+      <a class="btn ghost" href="blockchain.html"><span>What is a blockchain?</span></a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="v">100 M</div><div class="l">Max supply</div></div>
+    <div class="hero-stat"><div class="v">50</div><div class="l">Per-proof cap</div></div>
+    <div class="hero-stat"><div class="v">8</div><div class="l">Decimals</div></div>
+  </div>
+
+  <div class="scroll-cue"><span class="rail"></span>Scroll</div>
+</header>
+
+<!-- TICKER -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <div class="ticker-row">
+      <span>Proof-of-Scientific-Work</span>
+      <span>Deterministic linear verifier</span>
+      <span>Cumulative-work fork choice</span>
+      <span>Signed block proposals</span>
+      <span>Marginal rewards</span>
+      <span>Adaptive SHA-256 PoW</span>
+      <span>SQLite replay state</span>
+      <span>Scrypt + AES-GCM wallets</span>
+      <span>M-of-n multisig</span>
+      <span>Timelocked governance</span>
+    </div>
+    <div class="ticker-row" aria-hidden="true">
+      <span>Proof-of-Scientific-Work</span>
+      <span>Deterministic linear verifier</span>
+      <span>Cumulative-work fork choice</span>
+      <span>Signed block proposals</span>
+      <span>Marginal rewards</span>
+      <span>Adaptive SHA-256 PoW</span>
+      <span>SQLite replay state</span>
+      <span>Scrypt + AES-GCM wallets</span>
+      <span>M-of-n multisig</span>
+      <span>Timelocked governance</span>
+    </div>
+  </div>
+</div>
+
+<!-- IDEA -->
+<section id="idea">
+  <div class="wrap">
+    <img src="assets/ascii-magic-1.png" alt="" class="rev"
+         style="max-width:320px;margin:0 0 48px;opacity:.85;">
+
+    <div class="eyebrow rev">01 — The idea</div>
+    <h2 class="h2 rev d1">Bitcoin burns hashes.<br>MLabChain pays for results.</h2>
+
+    <div class="edit rev d2">
+      <aside class="edit-side">
+        <div class="num">↳</div>
+        <p>
+          A hash has no meaning. That is what makes Bitcoin trustless.
+          A trained model does have meaning. That is what makes
+          MLabChain honest — and what makes it a provenance tool,
+          not a currency.
+        </p>
+      </aside>
+      <div class="edit-main">
+        <p>
+          Bitcoin's work is a hash with leading zeros. It is deliberately
+          empty: nobody wants the hash, so nobody produces it except to
+          mine. That property makes it trustless and makes it burn energy
+          on nothing at all.
+        </p>
+        <p>
+          MLabChain replaces the empty work with a bounded class of
+          <em>deterministic machine-learning training</em>. A challenge
+          pins the dataset, the split, the metric, and the baseline. A
+          submission commits the model, the architecture, the training
+          parameters, and the resulting metrics. The chain pays only when
+          the model measurably improves the pinned baseline.
+        </p>
+        <p>
+          The consequence is the one that matters. Verification is
+          <strong>re-execution</strong>. That makes MLabChain honest as
+          a scientific ledger and unsuitable as a security mechanism.
+          The project states both, in every document, on every page.
+        </p>
+      </div>
+    </div>
+
+    <div class="quote rev d3">
+      Useful work and cheap verification are opposites.
+      <em>MLabChain picks useful work.</em>
+    </div>
+  </div>
+</section>
+
+<!-- FILM -->
+<section id="film" class="film">
+  <div class="film-head">
+    <span class="rec"></span>
+    <span>REC</span>
+    <span class="time" id="filmTime">00:00:00:00</span>
+    <span style="margin-left:auto;color:var(--fg-3);">MLC // MERA // LIVE RENDER</span>
+  </div>
+
+  <div class="film-inner">
+    <div class="stage">
+      <canvas id="filmCanvas"></canvas>
+      <div class="stage-overlay">
+        <div class="row">
+          <span class="tag live">● LIVE</span>
+          <span class="tag">CH / ML-WORK</span>
+        </div>
+        <div class="row">
+          <span class="tag" id="filmFrame">FRAME 000</span>
+          <span class="tag" id="filmHash">hash —</span>
+        </div>
+        <span class="crosshair" style="top:18%;right:12%;"></span>
+        <span class="crosshair" style="bottom:22%;left:8%;"></span>
+      </div>
+    </div>
+
+    <div class="stage-caption">
+      <span>Frames rendered on the fly. No video file. <b>Pure canvas.</b></span>
+      <span id="filmStat">Training · loss descent · merkle folding</span>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section id="pipe">
+  <div class="wrap">
+    <div class="eyebrow rev">02 — How it works</div>
+    <h2 class="h2 rev d1">Five stages from a challenge<br>to a sealed block.</h2>
+    <p class="lede rev d2" style="margin-top:24px;">
+      Scientific work and chain security are two separate mechanisms.
+      Bitcoin-style PoW seals blocks. <code>ML_WORK</code> transactions
+      are the scientific contribution, and they mint Mera.
+    </p>
+  </div>
+
+  <div class="wrap">
+    <div class="pipe-wrap rev d3">
+      <canvas id="pipeCanvas"></canvas>
+      <div class="pipe-legend">
+        <div class="li"><span class="swatch a"></span> Scientific work</div>
+        <div class="li"><span class="swatch t"></span> Consensus work</div>
+        <div class="li"><span class="swatch r"></span> Reward</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="grid g2" style="margin-top:44px;">
+      <div class="card rev">
+        <span class="idx">A — Scientific work</span>
+        <h3>Deterministic training</h3>
+        <p>The Python client trains against the challenge, writes <code>model.pkl</code>, <code>model.txt</code>, and a <code>proof.json</code> artifact, then builds a signed <code>ML_WORK</code> transaction.</p>
+      </div>
+      <div class="card rev d1">
+        <span class="idx">B — Consensus work</span>
+        <h3>Replay and fork choice</h3>
+        <p>The C++ core re-executes every transaction from genesis, checks signatures and nonces, compares cumulative chain work, and replaces canonical state only when a candidate chain wins.</p>
+      </div>
+      <div class="card rev d2">
+        <span class="idx">C — Reward</span>
+        <h3>Marginal, capped</h3>
+        <p>Reward is measured against the challenge's <em>current best</em> quality, not the original baseline. The first submission earns the full delta. Later submissions earn only the additional gain.</p>
+      </div>
+      <div class="card rev d3">
+        <span class="idx">D — Sealing</span>
+        <h3>Signed block proposal</h3>
+        <p>A producer builds a block template, signs the proposal with Ed25519, grinds a SHA-256 nonce to the current target, and commits. Nodes accept when cumulative work beats the local tip.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MERA -->
+<section id="mera">
+  <div class="wrap">
+    <div class="eyebrow rev">03 — The unit</div>
+    <h2 class="h2 rev d1">Mera is issued only for<br>marginal improvement.</h2>
+
+    <div class="mera-block rev d2">
+      <div class="coin">
+        <span class="ring outer"></span>
+        <span class="ring"></span>
+        <div class="coin-inner">
+          <img src="assets/MERA.png" alt="Mera">
+        </div>
+      </div>
+      <div class="mera-copy">
+        <h3 class="h3">Mera</h3>
+        <p>
+          A native ledger unit issued only when a submission improves a
+          pinned challenge frontier. Transferable on the chain, capped at
+          100 million, and enforced in integer arithmetic by the C++
+          state engine.
+        </p>
+        <div class="kv">
+          <div class="k">Asset</div><div class="v">MERA</div>
+          <div class="k">Decimals</div>         <div class="v">8</div>
+          <div class="k">Max supply</div>       <div class="v">100,000,000</div>
+          <div class="k">Per-proof cap</div>    <div class="v">50 MERA</div>
+          <div class="k">Min transfer fee</div> <div class="v">0.0001 MERA</div>
+          <div class="k">Min ML-work fee</div>  <div class="v">0.001 MERA</div>
+          <div class="k">Fees</div>             <div class="v">burned</div>
+          <div class="k">Verifier</div>         <div class="v">MLabChain-linear-v4</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="formula rev d3" id="formulaPanel">
+      <div class="formula-in">
+        <div class="formula-head">
+          <span>Reward arithmetic</span>
+          <span class="bar"></span>
+          <span>integer only</span>
+        </div>
+
+        <div class="f-row" data-i="0">
+          <span class="lbl">Quality</span>
+          <span class="tok">clamp( (baseline − model) × 1e6 / baseline, 0, 1e6 )</span>
+          <span class="val">ppm</span>
+        </div>
+        <div class="f-row" data-i="1">
+          <span class="lbl">Delta</span>
+          <span class="tok">quality_ppm − challenge.best_quality_ppm</span>
+          <span class="val" data-count="48000">0</span>
+        </div>
+        <div class="f-row" data-i="2">
+          <span class="lbl">Reward</span>
+          <span class="tok">min( cap, ops × delta_q × 1e8 / (1e7 × 1e6) )</span>
+          <span class="val" data-count="3840000000">0</span>
+        </div>
+        <div class="f-row" data-i="3">
+          <span class="lbl">Budget</span>
+          <span class="tok">reward ≤ challenge.budget_remaining</span>
+          <span class="val">finite</span>
+        </div>
+        <div class="f-row" data-i="4">
+          <span class="lbl">Supply</span>
+          <span class="tok">total_supply + reward ≤ 100,000,000 MERA</span>
+          <span class="val">cap</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOUNDARY -->
+<section id="boundary">
+  <div class="wrap">
+    <div class="eyebrow rev">04 — Honest boundary</div>
+    <h2 class="h2 rev d1">What v0.3 pays for.<br>What v0.3 does not claim.</h2>
+
+    <div class="split rev d2">
+      <div class="col yes">
+        <h4><span class="dot"></span> What v0.3 pays for</h4>
+        <ul>
+          <li>Deterministic linear regression against a pinned challenge.</li>
+          <li>Registered, budgeted, maturity-delayed challenges.</li>
+          <li>Marginal rewards vs the current best accepted quality.</li>
+          <li>Signed transfers, nonces, multisig, key rotation.</li>
+          <li>Fork choice by cumulative work, with reorg and replay.</li>
+          <li>Signed block proposals and adaptive SHA-256 PoW.</li>
+          <li>A small TCP P2P layer with sync and relay.</li>
+          <li>Scrypt + AES-GCM encrypted wallets.</li>
+        </ul>
+      </div>
+      <div class="col no">
+        <h4><span class="dot"></span> What v0.3 does not claim</h4>
+        <ul>
+          <li>That a model hash proves a training procedure ran.</li>
+          <li>That verification is cheaper than re-execution.</li>
+          <li>That GPU, PyTorch, JAX, or stochastic training are consensus-valid.</li>
+          <li>That the P2P layer resists an Internet-scale adversary.</li>
+          <li>That the ERC-20 contract is a trustless bridge.</li>
+          <li>That Mera has a price, a market, or a future listing.</li>
+          <li>That Sybil resistance exists beyond PoW and challenge bonds.</li>
+          <li>That the reference node is an audited mainnet.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rev d3" style="margin-top:36px;padding:36px clamp(24px,4vw,48px);border:1px solid var(--line);border-left:2px solid var(--coral);border-radius:4px;background:linear-gradient(160deg,rgba(255,92,68,.05),transparent 60%);">
+      <h4 style="color:var(--coral);margin-bottom:22px;">Four open problems, deliberately deferred</h4>
+      <div class="grid g2" style="margin:0;">
+        <div>
+          <p><strong>General ML proofs.</strong> A model hash is a commitment, not a proof. Deterministic re-execution is the only sound verifier, and it only works for verifier classes the node implements.</p>
+          <p style="margin-bottom:0;"><strong>Stochastic and GPU training.</strong> Not consensus-valid. Can be recorded as provenance, cannot be paid.</p>
+        </div>
+        <div>
+          <p><strong>Permissionless P2P hardening.</strong> Peer discovery, anti-eclipse, connection quotas, fuzzing, formal message limits.</p>
+          <p style="margin-bottom:0;"><strong>Trustless L1↔EVM bridge.</strong> Requires a proof or attestation protocol and audited contracts. Not in this release.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="rev d4" style="margin-top:28px;">
+      <a class="inline" href="blockchain.html">Read the blockchain primer →</a>
+      &nbsp;·&nbsp;
+      <a class="inline" href="science.html">Proof-of-Scientific-Work explained →</a>
+    </p>
+  </div>
+</section>
+
+<!-- START -->
+<section id="start">
+  <div class="wrap">
+    <div class="eyebrow rev">05 — Quick start</div>
+    <h2 class="h2 rev d1">Build. Init. Train. Seal.</h2>
+    <p class="lede rev d2" style="margin-top:20px;">
+      Python 3.10+, a C++17 compiler, CMake, OpenSSL, SQLite3, and Boost
+      headers. The core builds into a single executable called <code>mera_core</code>.
+    </p>
+
+    <div class="term rev d3" id="term">
+      <div class="term-bar">
+        <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+        <span class="ttl">mera — devnet session</span>
+      </div>
+      <div class="term-body" id="termBody"></div>
+    </div>
+
+    <div class="grid g2" style="margin-top:40px;">
+      <div class="card rev">
+        <span class="idx">Build</span>
+        <h3>Native core</h3>
+        <pre style="margin-top:14px;border:none;padding:0;background:none;"><code>./build.sh        <span class="c"># linux / macOS</span>
+./build.ps1       <span class="c"># windows</span>
+ctest --test-dir build
+pytest</code></pre>
+      </div>
+      <div class="card rev d1">
+        <span class="idx">P2P</span>
+        <h3>Two nodes, one chain</h3>
+        <pre style="margin-top:14px;border:none;padding:0;background:none;"><code>mera_core node --port 19001
+mera_core node --port 19002 \
+  --peers 127.0.0.1:19001
+
+mlabchain.py sync --peer 127.0.0.1:19001</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATUS -->
+<section id="status">
+  <div class="wrap">
+    <div class="eyebrow rev">06 — Status</div>
+    <h2 class="h2 rev d1">Where v0.3 stands.</h2>
+
+    <div class="meters rev d2">
+      <div class="meter" data-w="100"><span class="lb">Native chain</span><span class="bar"></span><span class="vl">devnet</span></div>
+      <div class="meter" data-w="45"><span class="lb">Paid ML verifier</span><span class="bar"></span><span class="vl">linear</span></div>
+      <div class="meter" data-w="35"><span class="lb">P2P network</span><span class="bar"></span><span class="vl">reference</span></div>
+      <div class="meter" data-w="25"><span class="lb">EVM representation</span><span class="bar"></span><span class="vl">template</span></div>
+      <div class="meter" data-w="15"><span class="lb">Mainnet readiness</span><span class="bar"></span><span class="vl">audit pending</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- BANNER -->
+<section class="tight">
+  <div class="wrap">
+    <div class="rev" style="border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;background:var(--bg-1)">
+      <img src="assets/MLC_template.png" alt="MLabChain v0.3.0 and Mera v3" style="width:100%;display:block">
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="wrap">
+    <div class="eyebrow rev">07 — About</div>
+    <h2 class="h2 rev d1">Made by Digital Hana Arts,<br>supervised by a kitten.</h2>
+
+    <div class="about-grid rev d2" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,5vw,72px);align-items:start;margin-top:44px;">
+      <div>
+        <p class="lede">
+          MLabChain is developed and maintained by
+          <strong>Digital Hana Arts</strong>. The project builds small,
+          honest, research-grade tools in the intersection of machine
+          learning, scientific reproducibility, and distributed systems.
+        </p>
+        <div class="dha-plate" style="display:flex;align-items:center;gap:18px;margin-top:32px;padding:22px 24px;border:1px solid var(--line);border-radius:6px;background:var(--bg-1);">
+          <img src="assets/DHA_logo_h.png" alt="Digital Hana Arts" style="height:44px;">
+          <div>
+            <div style="font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--fg);">Digital Hana Arts</div>
+            <div style="font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;color:var(--fg-3);margin-top:4px;">Maintainer</div>
+          </div>
+        </div>
+      </div>
+      <div class="about-card" style="padding:36px;border:1px solid var(--line);border-radius:6px;background:var(--bg-1);">
+        <img src="assets/Hana_the_kitten.jpeg" alt="Hana" style="width:100%;border-radius:4px;margin-bottom:22px;">
+        <h3>Hana</h3>
+        <p style="font-size:.94rem;color:var(--fg-2);">
+          Hana is a kitten. She is the official mascot and reminds
+          everyone that a ledger is only as useful as the analysis it
+          makes reproducible. She does not sign transactions. She has no
+          opinion on PoW difficulty. She considers the 60-second target
+          block time generous.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="science.html">Science</a> ·
+        <a href="protocol.html">Protocol</a> ·
+        <a href="faq.html">FAQ</a>
+      </div>
+    </div>
+    <div class="foot-right">
+      <img src="assets/mlabchain_txt.png" alt="">
+    </div>
+  </div>
+  <div class="foot-tagline">Proof of Scientific Work</div>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The blockchain industry — MLabChain</title>
+<meta name="description" content="A grounded look at the blockchain industry: the sectors that actually work, the ones that don't, and where a scientific-work ledger fits.">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html"><span class="pulse"></span><img src="assets/mlabchain.png" alt="">MLabChain</a>
+    <div class="nav-menu">
+      <a href="index.html#idea">Idea</a>
+      <a href="index.html#pipe">Pipeline</a>
+      <a href="index.html#mera">Mera</a>
+      <div class="nav-drop">
+        <button type="button">Learn</button>
+        <div class="nav-drop-menu">
+          <a href="blockchain.html">Blockchain Primer</a>
+          <a href="industry.html" aria-current="page">Industry Landscape</a>
+          <a href="science.html">Proof-of-Scientific-Work</a>
+          <a href="protocol.html">MERA Protocol</a>
+          <a href="architecture.html">Architecture</a>
+          <a href="security.html">Security Notes</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+      </div>
+      <a href="index.html#start">Start</a>
+    </div>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="index.html">Home</a>
+      <span class="sep">/</span>
+      <span class="here">Industry Landscape</span>
+    </nav>
+    <div class="eyebrow">Learn · 02</div>
+    <h1 class="page-title">The blockchain <em>industry</em>,<br>without the noise.</h1>
+    <p class="page-lede">
+      What actually exists, what is being built, what has quietly
+      disappeared, and where a scientific-work ledger like MLabChain sits
+      in the picture. Written for a reader who has heard the word
+      "blockchain" and wants to know what is real.
+    </p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="prose-layout">
+
+    <aside class="toc">
+      <h5>On this page</h5>
+      <ol>
+        <li><a href="#shape">Shape of the industry</a></li>
+        <li><a href="#real">What works</a></li>
+        <li><a href="#hype">What was hyped</a></li>
+        <li><a href="#science">Science and provenance</a></li>
+        <li><a href="#where">Where MLabChain fits</a></li>
+        <li><a href="#econ">Economics and governance</a></li>
+        <li><a href="#outlook">Outlook</a></li>
+      </ol>
+    </aside>
+
+    <article class="prose">
+
+      <h2 id="shape">Shape of the industry</h2>
+      <p>
+        The blockchain industry is not one thing. It is at least five
+        distinct sectors that share a vocabulary and almost nothing else.
+        Separating them is the first step to evaluating any claim about
+        "blockchain".
+      </p>
+
+      <ul>
+        <li><strong>Base-layer protocols.</strong> Bitcoin, Ethereum, Solana, and a long tail of others. They provide the ledger itself, and sell block space.</li>
+        <li><strong>Infrastructure.</strong> Wallets, node providers, indexers, oracles, bridges. They make the base layer usable.</li>
+        <li><strong>Applications.</strong> Decentralised exchanges, lending protocols, stablecoins, NFT marketplaces. They sit on top and generate real usage.</li>
+        <li><strong>Enterprise ledgers.</strong> Hyperledger, Corda, Quorum, and consortium chains. They are permissioned and mostly invisible to the public.</li>
+        <li><strong>Adjacent systems.</strong> Content-addressed storage (IPFS, Filecoin), verifiable computation, zero-knowledge rollups. They borrow the vocabulary but solve different problems.</li>
+      </ul>
+
+      <p>
+        Conflating these is the source of most confusion in the field.
+        "Blockchain" as a synonym for "cryptocurrency" is like
+        "database" as a synonym for "bank".
+      </p>
+
+      <h2 id="real">What actually works</h2>
+      <p>
+        Three genuine use cases have survived a decade of market cycles
+        and regulatory attention. They are not glamorous, and they are
+        not what most people picture when they hear the word.
+      </p>
+
+      <h3>Settlement</h3>
+      <p>
+        Cross-border payments, stablecoin rails, and interbank settlement
+        are the clearest success. The volume is real. Stablecoins alone
+        settle hundreds of billions of dollars per year. This is boring
+        infrastructure, and boring infrastructure is where blockchains
+        earn their keep.
+      </p>
+
+      <h3>Tamper-evident records</h3>
+      <p>
+        Supply chain provenance, certificate registries, and timestamping
+        services use blockchains as a notary. The chain is not paying
+        anyone; it is providing a receipt. The value is in the receipt,
+        not in any token.
+      </p>
+
+      <h3>Permissioned consortium ledgers</h3>
+      <p>
+        Trade finance, insurance, and healthcare consortia use
+        blockchains to share state between institutions that do not trust
+        each other. The nodes are named. The consensus is BFT. The
+        economics are contractual, not speculative. This sector is small
+        and largely invisible, and it is where the technology has the
+        clearest product-market fit.
+      </p>
+
+      <div class="callout good">
+        <h5>Pattern</h5>
+        <p>
+          The projects that work treat the blockchain as
+          <em>infrastructure</em>. The projects that fail treat it as the
+          product.
+        </p>
+      </div>
+
+      <h2 id="hype">What was hyped and did not deliver</h2>
+      <p>
+        Honesty requires the other column. These categories attracted
+        enormous capital and produced almost nothing durable.
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Category</th><th>Promise</th><th>Outcome</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ICO tokens (2017–18)</td>
+            <td>Fund projects without VCs.</td>
+            <td>Mostly zero. Regulatory action followed.</td>
+          </tr>
+          <tr>
+            <td>NFTs as art (2021)</td>
+            <td>Scarce digital ownership.</td>
+            <td>Volume collapsed &gt; 95% from peak.</td>
+          </tr>
+          <tr>
+            <td>"Web3" social</td>
+            <td>User-owned platforms.</td>
+            <td>Users stayed on Web2. Few exceptions.</td>
+          </tr>
+          <tr>
+            <td>Enterprise chain pilots</td>
+            <td>Replace internal databases.</td>
+            <td>Mostly killed by "why not PostgreSQL?"</td>
+          </tr>
+          <tr>
+            <td>Play-to-earn</td>
+            <td>Games that pay.</td>
+            <td>Ponzi dynamics. Collapsed 2022.</td>
+          </tr>
+          <tr>
+            <td>"Useful PoW"</td>
+            <td>Mine real work, not hashes.</td>
+            <td>Every implementation ran into the verification asymmetry.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The last row is directly relevant to MLabChain. See
+        <a href="science.html">Proof-of-Scientific-Work</a> for the full
+        analysis of why "useful mining" fails as a security mechanism,
+        and why MLabChain uses it only as a provenance mechanism.
+      </p>
+
+      <h2 id="science">Science, research, and provenance</h2>
+      <p>
+        Scientific reproducibility is one of the most promising
+        non-financial applications of blockchains, and it has received
+        the least attention from the industry. That is largely because
+        the value is subtle and the audience is small.
+      </p>
+      <p>
+        The problem is well known: published results often cannot be
+        reproduced, because the code, the data, the parameters, or the
+        environment are missing or have drifted. Journals, funding
+        agencies, and researchers themselves have all tried to fix this
+        with mandates, checklists, and archiving services.
+      </p>
+      <p>
+        A blockchain adds one specific thing to that toolkit: a
+        <em>tamper-evident</em> record. Not "the data is correct", but
+        "the data is the same as when it was registered". For scientific
+        work, that distinction is often exactly what is missing.
+      </p>
+
+      <div class="callout">
+        <h5>Existing efforts</h5>
+        <p>
+          CERN Analysis Preservation, the Open Science Framework,
+          Zenodo, and institutional repositories all provide archival
+          storage with persistent identifiers. They do not provide
+          local, personal, cryptographically verifiable records that an
+          individual researcher can hold independently.
+        </p>
+      </div>
+
+      <h2 id="where">Where MLabChain fits</h2>
+      <p>
+        MLabChain is not a base-layer protocol, not an enterprise
+        consortium ledger, and not a cryptocurrency. It sits in the
+        <strong>tamper-evident records</strong> category, specialised for
+        one workflow: machine-learning training.
+      </p>
+      <p>
+        The unit it issues, Mera, is not a currency and does not pretend
+        to be one. It is a local, transferable record of verified
+        scientific work. Its "price" is whatever the work it represents
+        is worth to the people who care about that work — which is
+        usually a small number of collaborators and a long-term
+        institutional interest in reproducibility.
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Dimension</th><th>Typical crypto chain</th><th>MLabChain</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Target user</td><td>Anyone, globally</td><td>One researcher, one laptop</td></tr>
+          <tr><td>Consensus</td><td>Permissionless PoW/PoS</td><td>Single-writer, optional testnet</td></tr>
+          <tr><td>Value unit</td><td>Speculative asset</td><td>Non-transferable-in-practice receipt</td></tr>
+          <tr><td>Primary output</td><td>Blocks</td><td>Signed ML provenance records</td></tr>
+          <tr><td>Market</td><td>Exchanges, liquidity pools</td><td>None, and by design</td></tr>
+          <tr><td>Regulatory status</td><td>Contested</td><td>Software tool, not a financial product</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="econ">Economics and governance — the honest part</h2>
+      <p>
+        Token economics is where the industry has produced the most
+        elaborate theories and the least empirical evidence. Four
+        observations are worth stating plainly.
+      </p>
+      <ol>
+        <li>
+          <strong>Most tokens have no reason to exist.</strong> A token
+          is useful only if the system it belongs to requires a scarce
+          digital resource. If the system works with a normal database
+          and a normal payment rail, the token is a fundraising
+          mechanism dressed up as a protocol feature.
+        </li>
+        <li>
+          <strong>Governance tokens do not govern.</strong> In practice,
+          most governance is exercised by a small number of large
+          holders, or by a foundation. The token is a signalling device,
+          not a decision mechanism.
+        </li>
+        <li>
+          <strong>"Yield" is usually dilution or leverage.</strong> A
+          10% APY on a stablecoin is either a subsidy paid from a
+          treasury, or a reward for taking a risk that is not priced in.
+        </li>
+        <li>
+          <strong>Regulatory clarity is a prerequisite, not an
+          afterthought.</strong> Treating a token as a financial
+          instrument brings securities law, tax law, and AML rules. Not
+          every project can survive that.
+        </li>
+      </ol>
+
+      <p>
+        MLabChain chooses the position that requires the least
+        regulatory surface: it does not sell anything, does not promise
+        returns, does not list on exchanges, and does not present Mera as
+        an investment. If you want to build a financial product on top of
+        it, that is a separate decision, made by you, with your own
+        counsel.
+      </p>
+
+      <h2 id="outlook">Outlook</h2>
+      <p>
+        The industry is in a consolidation phase. The speculative
+        applications have largely failed. The infrastructural ones are
+        growing slowly. The scientific and public-sector use cases are
+        the least mature, and arguably the most interesting, because
+        they are the ones where the "trustless verification" property
+        actually solves a real problem.
+      </p>
+      <p>
+        MLabChain is a small bet on that direction. It does not try to
+        be a currency, a platform, or a movement. It tries to be a
+        useful tool for one person who needs to prove what they ran.
+      </p>
+
+      <div class="callout good">
+        <h5>Take-away</h5>
+        <p>
+          The blockchain industry is mostly noise with a few genuinely
+          useful pieces inside. The useful pieces are infrastructural,
+          boring, and slow. That is where this project tries to sit.
+        </p>
+      </div>
+
+    </article>
+  </div>
+</main>
+
+<nav class="next-prev">
+  <a href="blockchain.html">
+    <span class="lbl">← Previous</span>
+    <span class="ttl">What is a blockchain?</span>
+  </a>
+  <a href="science.html" class="next">
+    <span class="lbl">Next →</span>
+    <span class="ttl">Proof-of-Scientific-Work</span>
+  </a>
+</nav>
+
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="science.html">Science</a> ·
+        <a href="protocol.html">Protocol</a> ·
+        <a href="faq.html">FAQ</a>
+      </div>
+    </div>
+    <div class="foot-right">
+      <img src="assets/mlabchain_txt.png" alt="">
+    </div>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

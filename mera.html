@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Mera unit — MLabChain</title>
+<meta name="description" content="Supply, issuance, fees, accounts, addresses, multisig, key rotation, transfers, wallet security, and the ERC-20 representation of the Mera unit.">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+  .coin{
+    position:relative;width:clamp(200px,26vw,320px);aspect-ratio:1;
+    display:grid;place-items:center;perspective:1000px;margin:0 auto;
+  }
+  .coin-inner{
+    width:100%;height:100%;
+    animation:coinSpin 14s linear infinite;
+    transform-style:preserve-3d;position:relative;
+  }
+  @keyframes coinSpin{to{transform:rotateY(360deg)}}
+  .coin img{
+    width:100%;height:auto;
+    filter:drop-shadow(0 0 40px rgba(245,182,66,.35)) drop-shadow(0 0 80px rgba(232,93,117,.15));
+  }
+  .coin .ring{
+    position:absolute;inset:-14%;border:1px dashed var(--line-hi);
+    border-radius:50%;animation:ringSpin 40s linear infinite reverse;pointer-events:none;
+  }
+  .coin .ring.outer{inset:-26%;border-color:var(--amber-d);animation-duration:60s}
+  @keyframes ringSpin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.coin-inner,.coin .ring{animation:none}}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html">
+      <span class="pulse"></span><img src="assets/mlabchain.png" alt="">MLabChain
+    </a>
+    <div class="nav-menu">
+      <a href="index.html">Home</a>
+      <a href="blockchain.html">Blockchain</a>
+      <a href="industry.html">Industry</a>
+      <a href="mlabchain.html">MLabChain</a>
+      <a href="mera.html" class="active">Mera</a>
+      <a href="docs.html">Docs</a>
+      <a href="about.html">About</a>
+    </div>
+    <button class="nav-toggle" aria-label="Menu"><span></span></button>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap page-hero-in">
+    <nav class="crumbs">
+      <a href="index.html">Home</a><span class="sep">/</span><span>Mera</span>
+    </nav>
+    <div class="eyebrow rev">Asset</div>
+    <h1 class="h1 rev d1">Mera,<br><em>the native unit.</em></h1>
+    <p class="lede rev d2" style="margin-top:24px">
+      What Mera is, how it is issued, how it moves, and what it is not.
+      No price. No market. No investment claim.
+    </p>
+  </div>
+</header>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="grid g2" style="align-items:center;gap:clamp(30px,5vw,60px)">
+      <div class="rev" style="text-align:center">
+        <div class="coin">
+          <span class="ring outer"></span><span class="ring"></span>
+          <div class="coin-inner"><img src="assets/MERA.png" alt="Mera"></div>
+        </div>
+      </div>
+      <div class="rev d1">
+        <h2 class="h2">Mera</h2>
+        <p style="margin-top:18px">
+          A native ledger unit issued only when a submission improves a
+          pinned challenge frontier. Transferable on the chain, capped at
+          100 million, and enforced in integer arithmetic by the C++ state
+          engine.
+        </p>
+        <div class="kv">
+          <div class="k">Asset</div><div class="v">MERA</div>
+          <div class="k">Decimals</div><div class="v">8</div>
+          <div class="k">Max supply</div><div class="v">100,000,000</div>
+          <div class="k">Per-proof cap</div><div class="v">50 MERA</div>
+          <div class="k">Min transfer fee</div><div class="v">0.0001 MERA</div>
+          <div class="k">Min ML-work fee</div><div class="v">0.001 MERA</div>
+          <div class="k">Fees</div><div class="v">burned</div>
+          <div class="k">Verifier</div><div class="v">MLabChain-linear-v4</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="article">
+  <aside class="article-toc rev">
+    <div class="lbl">On this page</div>
+    <ol>
+      <li><a href="#what">What Mera is</a></li>
+      <li><a href="#supply">Supply</a></li>
+      <li><a href="#issuance">Issuance</a></li>
+      <li><a href="#fees">Fees</a></li>
+      <li><a href="#accounts">Accounts</a></li>
+      <li><a href="#multisig">Multisig</a></li>
+      <li><a href="#rotation">Key rotation</a></li>
+      <li><a href="#transfers">Transfers</a></li>
+      <li><a href="#wallet">Wallet</a></li>
+      <li><a href="#erc20">ERC-20 representation</a></li>
+      <li><a href="#not">What Mera is not</a></li>
+    </ol>
+  </aside>
+
+  <article class="article-body">
+
+    <h2 id="what"><span class="num">01</span>What Mera is</h2>
+    <p>
+      Mera is the native unit of MLabChain. It is issued only for accepted
+      <code>ML_WORK</code> certificates, and it is transferable on the chain
+      to any other account. Balances are maintained as O(1) chain metadata,
+      and state is defined by replaying the canonical block history.
+    </p>
+    <p>
+      Mera is not a contract on another chain. It is not a representation of
+      anything off-chain. It is a balance in the C++ state engine, signed
+      into the block history of MLabChain, and enforceable by any node that
+      replays that history.
+    </p>
+
+    <h2 id="supply"><span class="num">02</span>Supply</h2>
+    <p>
+      Total supply is capped at 100,000,000 MERA. The cap is enforced in two
+      places: in the C++ state engine during <code>ML_WORK</code>
+      validation, and in the ERC-20 representation contract as an
+      <code>ERC20Capped</code> extension.
+    </p>
+    <p>
+      Supply is stored as chain metadata, not recomputed from account
+      balances. Every issuance and every burned fee updates it in a single
+      integer. This makes supply verification O(1) instead of O(accounts).
+    </p>
+
+    <h2 id="issuance"><span class="num">03</span>Issuance</h2>
+    <p>
+      Mera is not minted by mining. It is minted by verified scientific work.
+      The reward for a submission is computed from:
+    </p>
+    <ul>
+      <li>the symbolic operation count of the training run;</li>
+      <li>the improvement over the challenge's current best quality;</li>
+      <li>the challenge's remaining budget;</li>
+      <li>the global supply cap.</li>
+    </ul>
+    <p>
+      All four are integer quantities. All four are checked by the C++ core.
+      See <a href="mlabchain.html#reward" style="color:var(--amber)">the reward formula</a>
+      for the exact arithmetic.
+    </p>
+
+    <h2 id="fees"><span class="num">04</span>Fees</h2>
+    <p>
+      Every transfer pays a fee. Every <code>ML_WORK</code> submission pays a
+      separate, higher fee. Fees are <strong>burned</strong>, meaning they
+      are removed from supply entirely rather than paid to a miner.
+    </p>
+    <p>
+      Burning is a policy choice. It means total supply decreases over time
+      as transfers happen, offsetting ML-work issuance. The steady-state
+      supply depends on the ratio of transfers to ML submissions, which is
+      not modelled in v0.3 and would need economic simulation before any
+      production deployment.
+    </p>
+    <p>
+      Fees exist primarily to make spam expensive. A mempool with a minimum
+      fee of zero is a mempool that fills instantly. The reference minimums
+      are set high enough that filling the mempool has a real cost.
+    </p>
+
+    <h2 id="accounts"><span class="num">04</span>Accounts and addresses</h2>
+    <p>
+      Every account is identified by an Ed25519 public key. The account
+      address is derived deterministically from the public key:
+    </p>
+
+<pre><code>payload = SHA256(pubkey)[:40]                    <span class="c"># 40 hex chars</span>
+checksum = SHA256("MERA-ADDR-V3|" + "MERA1" + payload)[:8]
+address = "MERA1" + payload + checksum</code></pre>
+
+    <p>
+      The checksum is not optional. A single-character typo in a recipient
+      address produces a checksum mismatch, and the C++ core rejects the
+      transaction. This is a small feature that prevents a large class of
+      user error.
+    </p>
+
+    <h2 id="multisig"><span class="num">05</span>Multisig</h2>
+    <p>
+      Multisig accounts use the prefix <code>MERA2</code>. An m-of-n
+      threshold signature set is required to authorise a transfer or a
+      governance action.
+    </p>
+    <p>
+      Signer keys are sorted canonically before address derivation, so the
+      same set of keys always produces the same address regardless of the
+      order in which they are supplied. The signature set must have exactly
+      one signature per key, in the same sorted order.
+    </p>
+
+    <h2 id="rotation"><span class="num">06</span>Key rotation</h2>
+    <p>
+      A <code>KEY_ROTATE</code> transaction changes the authorized public
+      key for an account without changing the account address. This lets a
+      user replace a potentially compromised key while keeping the same
+      balance, the same history, and the same identity on the chain.
+    </p>
+    <p>
+      After rotation, the new key authorizes transfers, block producer
+      signatures, and ML submissions. The old key is no longer valid for
+      anything.
+    </p>
+
+    <h2 id="transfers"><span class="num">07</span>Transfers</h2>
+    <p>
+      A transfer is signed by the sender's current authorization key, has
+      a monotonically increasing account nonce, and includes the recipient
+      address, the amount, the fee, and an optional note.
+    </p>
+    <p>
+      The nonce is checked against the pending transaction set as well as
+      the committed state. This means a sender can queue multiple
+      transactions, and each one must use the next nonce in sequence. A
+      transaction with a stale nonce is rejected.
+    </p>
+    <p>
+      The sender's balance is also reserved against pending transactions.
+      A user who submits two transfers cannot spend the same balance twice,
+      even before either one is mined.
+    </p>
+
+    <h2 id="wallet"><span class="num">08</span>Wallet</h2>
+    <p>
+      The reference wallet is a single file at
+      <code>mera_data/wallet.json</code>. It contains:
+    </p>
+    <ul>
+      <li>the account address and public key in plaintext;</li>
+      <li>the Ed25519 private key, encrypted.</li>
+    </ul>
+    <p>
+      Encryption uses <strong>Scrypt</strong> with parameters
+      <code>N=2^15, r=8, p=1</code> to derive a 32-byte key from the
+      password, and <strong>AES-256-GCM</strong> to encrypt the private key
+      with the authentication tag bound to the string
+      <code>MERA-WALLET-V2</code>.
+    </p>
+    <p>
+      The KDF parameters are stored in the file so a future version can
+      raise them without breaking existing wallets. The wallet format is
+      versioned; a v1 wallet from the earlier line is refused.
+    </p>
+    <p>
+      Wallet creation asks for the password twice and requires at least
+      10 characters. Backups are a separate command:
+      <code>wallet-backup --output FILE</code>. The wallet is not
+      included in the chain backup.
+    </p>
+
+    <h2 id="erc20"><span class="num">09</span>ERC-20 representation</h2>
+    <p>
+      <code>contracts/MeraScientific.sol</code> is an ERC-20 template
+      intended as an EVM representation of Mera. It includes:
+    </p>
+    <ul>
+      <li>8 decimals, matching the native unit;</li>
+      <li>a hard cap of 100,000,000 MERA;</li>
+      <li>a <code>MINTER_ROLE</code> reserved for a bridge authority;</li>
+      <li>a per-deposit replay protection map;</li>
+      <li>a <code>PAUSER_ROLE</code> for incident response;</li>
+      <li><code>AccessControlDefaultAdminRules</code> with a 2-day delayed admin transfer;</li>
+      <li><code>ERC20Permit</code> and <code>ERC20Burnable</code>.</li>
+    </ul>
+
+    <div class="callout danger">
+      <div class="ttl">This contract is not a bridge</div>
+      <p>
+        It does not watch the MLabChain network. It does not verify
+        deposits. It does not lock or burn native Mera. The security model
+        is <em>"trust whoever holds MINTER_ROLE"</em>. Until that role is
+        held by an audited, threshold-governed bridge with a proof or
+        attestation protocol, the contract is a template, not
+        infrastructure.
+      </p>
+    </div>
+
+    <h2 id="not"><span class="num">10</span>What Mera is not</h2>
+    <ul>
+      <li><strong>Not a currency.</strong> No merchant acceptance, no legal tender status, no stable value.</li>
+      <li><strong>Not a security.</strong> No claim on any asset, no expectation of profit from a common enterprise. Whether a regulator agrees is a separate question, and one the project does not answer.</li>
+      <li><strong>Not an investment.</strong> There is no price. There is no market. There is no promise of either.</li>
+      <li><strong>Not tradeable on any exchange.</strong> There is no listing and no plan for one.</li>
+      <li><strong>Not a store of value.</strong> The reference implementation burns fees and issues for scientific work; the resulting supply curve is not tuned for stability.</li>
+      <li><strong>Not backed by anything.</strong> Mera represents a claim on the MLabChain network's own accounting. Nothing else.</li>
+    </ul>
+
+    <div class="callout warn">
+      <div class="ttl">Read this twice</div>
+      <p>
+        If you found this page looking for an investment opportunity,
+        this is not one. The project is a reference implementation for a
+        narrow class of deterministic ML work. The unit exists to make
+        the accounting of that work legible. It has no external value,
+        and it is not intended to.
+      </p>
+    </div>
+
+    <hr>
+
+    <p class="muted">
+      Next: <a href="docs.html" style="color:var(--amber)">CLI and protocol reference →</a>
+    </p>
+
+  </article>
+</div>
+
+<div class="pager">
+  <a href="mlabchain.html" class="prev">
+    <span class="dir">← Previous</span>
+    <span class="ttl">MLabChain in detail</span>
+    <span class="sub">The protocol, the verifier, the boundary</span>
+  </a>
+  <a href="docs.html" class="next">
+    <span class="dir">Next →</span>
+    <span class="ttl">CLI and protocol</span>
+    <span class="sub">Command reference, wire format, schemas</span>
+  </a>
+</div>
+
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="mlabchain.html">Protocol</a> ·
+        <a href="mera.html">Mera</a> ·
+        <a href="docs.html">Docs</a> ·
+        <a href="about.html">About</a>
+      </div>
+    </div>
+    <div class="foot-right"><img src="assets/mlabchain_txt.png" alt=""></div>
+  </div>
+  <div class="foot-tagline">Proof of Scientific Work</div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

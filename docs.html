@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLI and protocol reference — MLabChain</title>
+<meta name="description" content="Command reference, wire protocol, challenge manifest schema, transaction types, error codes, and the v0.2 migration path for MLabChain v0.3.">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html">
+      <span class="pulse"></span><img src="assets/mlabchain.png" alt="">MLabChain
+    </a>
+    <div class="nav-menu">
+      <a href="index.html">Home</a>
+      <a href="blockchain.html">Blockchain</a>
+      <a href="industry.html">Industry</a>
+      <a href="mlabchain.html">MLabChain</a>
+      <a href="mera.html">Mera</a>
+      <a href="docs.html" class="active">Docs</a>
+      <a href="about.html">About</a>
+    </div>
+    <button class="nav-toggle" aria-label="Menu"><span></span></button>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap page-hero-in">
+    <nav class="crumbs">
+      <a href="index.html">Home</a><span class="sep">/</span><span>Docs</span>
+    </nav>
+    <div class="eyebrow rev">Reference</div>
+    <h1 class="h1 rev d1">Command line<br><em>and wire protocol.</em></h1>
+    <p class="lede rev d2" style="margin-top:24px">
+      Everything a developer needs to build against MLabChain v0.3. Every
+      command, every message, every schema, every error.
+    </p>
+  </div>
+</header>
+
+<div class="article">
+  <aside class="article-toc rev">
+    <div class="lbl">On this page</div>
+    <ol>
+      <li><a href="#install">Installation</a></li>
+      <li><a href="#cli">CLI reference</a></li>
+      <li><a href="#wire">Wire protocol</a></li>
+      <li><a href="#challenge-schema">Challenge schema</a></li>
+      <li><a href="#tx-types">Transaction types</a></li>
+      <li><a href="#errors">Error codes</a></li>
+      <li><a href="#migration">Migration</a></li>
+    </ol>
+  </aside>
+
+  <article class="article-body">
+
+    <h2 id="install"><span class="num">01</span>Installation</h2>
+    <p>
+      Python 3.10+, a C++17 compiler, CMake ≥ 3.20, OpenSSL, SQLite3, and
+      Boost headers. On Linux and macOS:
+    </p>
+<pre><code>git clone https://github.com/digitalhanaarts/MLabChain
+cd MLabChain
+./build.sh
+python -m pip install -e .
+python mlabchain.py demo</code></pre>
+
+    <p>On Windows, in PowerShell:</p>
+<pre><code>git clone https://github.com/digitalhanaarts/MLabChain
+cd MLabChain
+./build.ps1
+python -m pip install -e .
+python mlabchain.py demo</code></pre>
+
+    <h2 id="cli"><span class="num">02</span>CLI reference</h2>
+
+    <h3>Node lifecycle</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Command</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>init</code></td><td>Create a new chain. Options: <code>--network devnet|testnet|mainnet</code>, <code>--governance-keys</code>, <code>--governance-threshold</code>.</td></tr>
+          <tr><td><code>status</code></td><td>Show height, tip, chain work, pending count, supply.</td></tr>
+          <tr><td><code>validate</code></td><td>Replay the full chain and verify every block, transaction, and account state.</td></tr>
+          <tr><td><code>backup --output FILE</code></td><td>SQLite online backup. Wallet is separate.</td></tr>
+          <tr><td><code>wallet-backup --output FILE</code></td><td>Copy the encrypted wallet file to a new location.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Wallets and accounts</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Command</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>create-wallet</code></td><td>Generate a new Ed25519 keypair and save an encrypted wallet.</td></tr>
+          <tr><td><code>balance --address ADDR</code></td><td>Show balance for an address.</td></tr>
+          <tr><td><code>key-rotate --new-public-key HEX</code></td><td>Replace the account's authorized key.</td></tr>
+          <tr><td><code>transfer --to ADDR --amount N [--fee F] [--mine]</code></td><td>Send Mera.</td></tr>
+          <tr><td><code>submit-multisig-transfer ...</code></td><td>Send Mera from a MERA2 multisig account.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Challenges and ML work</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Command</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>challenge-create --id ID --output PATH ...</code></td><td>Write a challenge manifest. Requires <code>--n-samples</code>, <code>--n-features</code>, <code>--seed</code>, <code>--noise</code>, <code>--train-fraction</code>, <code>--max-epochs</code>.</td></tr>
+          <tr><td><code>challenge-register --manifest PATH --budget N</code></td><td>Register a challenge on-chain with a finite budget.</td></tr>
+          <tr><td><code>challenge-status --challenge-id ID</code></td><td>Show the challenge's current state.</td></tr>
+          <tr><td><code>mine --challenge PATH --config PATH</code></td><td>Train, submit, and seal in one step.</td></tr>
+          <tr><td><code>mine-empty --count N</code></td><td>Seal empty blocks to advance maturity.</td></tr>
+          <tr><td><code>submit-ml ...</code></td><td>Low-level: submit an already-built ML certificate.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Networking</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Command</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>node --port N [--listen-host H] [--peers LIST] [--seconds S]</code></td><td>Run a P2P node. Peers are comma-separated <code>host:port</code> pairs.</td></tr>
+          <tr><td><code>sync --peer host:port</code></td><td>One-shot synchronisation with a peer.</td></tr>
+          <tr><td><code>show-tx --tx-hash HEX</code></td><td>Show a transaction by its hash.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Inspection and devnet</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Command</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>faucet --address ADDR --amount N</code></td><td>Devnet-only mint. Disabled on mainnet by genesis flag.</td></tr>
+          <tr><td><code>demo</code></td><td>End-to-end demonstration on a fresh devnet.</td></tr>
+          <tr><td><code>self-test</code></td><td>Run the C++ core's built-in tests.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="wire"><span class="num">03</span>Wire protocol</h2>
+    <p>
+      The P2P protocol is line-delimited over TCP. Each message is a single
+      UTF-8 line terminated by <code>\n</code>. The first token before
+      <code>|</code> identifies the message type.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Message</th><th>Direction</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>PING</code></td><td>→</td><td>Liveness probe.</td></tr>
+          <tr><td><code>PONG</code></td><td>←</td><td>Liveness response.</td></tr>
+          <tr><td><code>STATUS</code></td><td>→</td><td>Request node status.</td></tr>
+          <tr><td><code>STATUS|H|TIP|WORK</code></td><td>←</td><td>Height, tip hash, cumulative work.</td></tr>
+          <tr><td><code>GETCHAIN</code></td><td>→</td><td>Request the full chain.</td></tr>
+          <tr><td><code>BLOCK|&lt;wire&gt;</code></td><td>←</td><td>A single block, hex-encoded fields separated by <code>|</code>.</td></tr>
+          <tr><td><code>END</code></td><td>←</td><td>End of a <code>GETCHAIN</code> response.</td></tr>
+          <tr><td><code>TX|&lt;wire&gt;</code></td><td>both</td><td>Relay a signed transaction.</td></tr>
+          <tr><td><code>OK</code></td><td>←</td><td>Message accepted.</td></tr>
+          <tr><td><code>ERROR|msg</code></td><td>←</td><td>Message rejected.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="challenge-schema"><span class="num">04</span>Challenge manifest schema</h2>
+    <p>
+      The manifest is a JSON document. Its canonical form — sorted keys, no
+      whitespace, UTF-8 — is hashed to produce <code>manifest_sha256</code>.
+      Any deviation from canonical form will change the hash.
+    </p>
+
+<pre><code>{
+  <span class="s">"challenge_id"</span>: <span class="s">"MLC-LINEAR-001"</span>,
+  <span class="s">"description"</span>: <span class="s">"Deterministic synthetic linear regression"</span>,
+  <span class="s">"dataset_kind"</span>: <span class="s">"synthetic_linear"</span>,
+  <span class="s">"dataset_sha256"</span>: <span class="s">"…"</span>,
+  <span class="s">"n_samples"</span>: 1200,
+  <span class="s">"n_features"</span>: 4,
+  <span class="s">"generator_seed"</span>: 42,
+  <span class="s">"generator_noise"</span>: 0.1,
+  <span class="s">"split_rule"</span>: <span class="s">"first_fraction"</span>,
+  <span class="s">"train_fraction"</span>: 0.8,
+  <span class="s">"metric"</span>: <span class="s">"NMSE"</span>,
+  <span class="s">"baseline_kind"</span>: <span class="s">"mean_predictor"</span>,
+  <span class="s">"baseline_nmse"</span>: 1.0,
+  <span class="s">"baseline_model_sha256"</span>: null,
+  <span class="s">"max_epochs"</span>: 100,
+  <span class="s">"verifier"</span>: <span class="s">"MLabChain-linear-v4"</span>,
+  <span class="s">"schema_version"</span>: 4,
+  <span class="s">"manifest_sha256"</span>: <span class="s">"…"</span>
+}</code></pre>
+
+    <h2 id="tx-types"><span class="num">05</span>Transaction types</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Type</th><th>Signed by</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>TRANSFER</code></td><td>Sender</td><td>Move Mera between accounts.</td></tr>
+          <tr><td><code>MULTISIG_TRANSFER</code></td><td>m-of-n signer set</td><td>Move Mera from a MERA2 account.</td></tr>
+          <tr><td><code>ML_WORK</code></td><td>Contributor</td><td>Submit a training run and claim its reward.</td></tr>
+          <tr><td><code>CHALLENGE_REGISTER</code></td><td>Proposer</td><td>Register a challenge with a bond and budget.</td></tr>
+          <tr><td><code>KEY_ROTATE</code></td><td>Current key</td><td>Replace the account's authorized public key.</td></tr>
+          <tr><td><code>GOV_PARAM</code></td><td>Governance multisig</td><td>Schedule a bounded fee-parameter change.</td></tr>
+          <tr><td><code>FAUCET</code></td><td>—</td><td>Devnet-only mint. Rejected on mainnet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="errors"><span class="num">06</span>Error codes</h2>
+    <p>
+      Errors are returned as <code>ERROR|message</code> on the wire, or
+      printed as <code>ERROR=message</code> by the core CLI. The most
+      common ones:
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Message</th><th>Cause</th></tr></thead>
+        <tbody>
+          <tr><td><code>invalid sender address</code></td><td>Address fails the checksum or the prefix check.</td></tr>
+          <tr><td><code>invalid Ed25519 signature</code></td><td>Signature does not verify against the public key and message.</td></tr>
+          <tr><td><code>invalid account nonce</code></td><td>Nonce is not exactly <code>account_nonce + pending_count + 1</code>.</td></tr>
+          <tr><td><code>insufficient balance</code></td><td>Sender balance is less than amount + fee, accounting for pending reservations.</td></tr>
+          <tr><td><code>fee below minimum</code></td><td>Fee is below the current <code>min_fee</code>.</td></tr>
+          <tr><td><code>challenge is not registered</code></td><td>The referenced challenge does not exist on-chain.</td></tr>
+          <tr><td><code>challenge is not active</code></td><td>Submission is before activation or after expiry.</td></tr>
+          <tr><td><code>ML result does not improve challenge best</code></td><td>The new quality is not strictly greater than the current best.</td></tr>
+          <tr><td><code>ML reward mismatch</code></td><td>The claimed reward does not match the formula applied to the marginal delta.</td></tr>
+          <tr><td><code>duplicate ML work claim</code></td><td>The <code>(challenge, dataset, model)</code> tuple was already paid.</td></tr>
+          <tr><td><code>maximum supply exceeded</code></td><td>Issuance would push supply past 100,000,000 MERA.</td></tr>
+          <tr><td><code>challenge reward budget exceeded</code></td><td>Issuance would exceed the challenge's remaining budget.</td></tr>
+          <tr><td><code>unsupported database schema</code></td><td>The SQLite file was created by an incompatible protocol version.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="migration"><span class="num">07</span>Migration from v0.2</h2>
+    <p>
+      v0.3 refuses to open a v0.2 database. This is intentional: the
+      consensus rules changed, and silently replaying old history under new
+      rules would be less safe than an explicit boundary.
+    </p>
+    <p>
+      To migrate:
+    </p>
+<pre><code>python tools/migrate_v2.py \
+  --input ./old/mera_data/mera.sqlite \
+  --output ./migration/v2_snapshot.json</code></pre>
+
+    <p>
+      The output is a JSON snapshot containing every account's balance and
+      nonce, the old genesis hash, the old tip, and a SHA-256 over the whole
+      snapshot. A production migration is expected to define a new genesis
+      that commits to this snapshot before importing balances.
+    </p>
+
+    <div class="callout info">
+      <div class="ttl">Why an explicit boundary</div>
+      <p>
+        v0.2 and v0.3 use different reward formulas, different address
+        formats, and different state layouts. A mechanical rewrite of a
+        v0.2 database into a v0.3 one would silently reinterpret history.
+        An explicit migration ceremony — with a signed snapshot that both
+        sides agree on — is slower but auditable.
+      </p>
+    </div>
+
+    <hr>
+
+    <p class="muted">
+      Next: <a href="about.html" style="color:var(--amber)">about the project →</a>
+    </p>
+
+  </article>
+</div>
+
+<div class="pager">
+  <a href="mera.html" class="prev">
+    <span class="dir">← Previous</span>
+    <span class="ttl">The Mera unit</span>
+    <span class="sub">Supply, wallets, ERC-20</span>
+  </a>
+  <a href="about.html" class="next">
+    <span class="dir">Next →</span>
+    <span class="ttl">About</span>
+    <span class="sub">DHA, credits, license</span>
+  </a>
+</div>
+
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="mlabchain.html">Protocol</a> ·
+        <a href="mera.html">Mera</a> ·
+        <a href="docs.html">Docs</a> ·
+        <a href="about.html">About</a>
+      </div>
+    </div>
+    <div class="foot-right"><img src="assets/mlabchain_txt.png" alt=""></div>
+  </div>
+  <div class="foot-tagline">Proof of Scientific Work</div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

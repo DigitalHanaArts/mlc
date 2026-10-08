@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Frequently asked questions — MLabChain</title>
+<meta name="description" content="Straight answers to common questions about MLabChain, Mera, and the project's scope: is it a coin, can I mine it, will it be worth something, and what does it actually do?">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  /* faq-page only */
+  .faq-item{
+    border-top:1px solid var(--line);
+    padding:0;
+  }
+  .faq-item:last-child{ border-bottom:1px solid var(--line); }
+  .faq-item summary{
+    padding:24px 0;
+    cursor:pointer;
+    display:flex; align-items:flex-start; gap:20px;
+    list-style:none;
+    font-family:var(--display);
+    font-style:italic;
+    font-size:clamp(1.2rem,2vw,1.5rem);
+    letter-spacing:-.015em;
+    line-height:1.3;
+    color:var(--fg);
+    transition:color .25s var(--ease);
+  }
+  .faq-item summary:hover{ color:var(--amber); }
+  .faq-item summary::-webkit-details-marker{ display:none; }
+  .faq-item summary::before{
+    content:"+";
+    font-family:var(--mono);
+    font-style:normal;
+    font-size:1.1rem;
+    color:var(--amber);
+    line-height:1;
+    padding-top:5px;
+    flex-shrink:0;
+    transition:transform .3s var(--ease);
+  }
+  .faq-item[open] summary::before{
+    content:"−";
+    transform:rotate(180deg);
+  }
+  .faq-body{
+    padding:0 0 28px 40px;
+    font-size:1rem;
+    line-height:1.75;
+    color:var(--fg-1);
+  }
+  .faq-body p{ color:var(--fg-1); }
+  .faq-body p:last-child{ margin-bottom:0; }
+  .faq-body ul, .faq-body ol{
+    color:var(--fg-1);
+    padding-left:22px;
+    margin:12px 0;
+  }
+  .faq-body li{ margin-bottom:8px; }
+  .faq-body li::marker{ color:var(--amber); }
+  .faq-body code{
+    font-family:var(--mono); font-size:.88em;
+    background:var(--bg-2); border:1px solid var(--line);
+    padding:1px 6px; border-radius:3px; color:var(--amber-2);
+  }
+  @media (max-width:640px){
+    .faq-body{ padding-left:24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html"><span class="pulse"></span><img src="assets/mlabchain.png" alt="">MLabChain</a>
+    <div class="nav-menu">
+      <a href="index.html#idea">Idea</a>
+      <a href="index.html#pipe">Pipeline</a>
+      <a href="index.html#mera">Mera</a>
+      <div class="nav-drop">
+        <button type="button">Learn</button>
+        <div class="nav-drop-menu">
+          <a href="blockchain.html">Blockchain Primer</a>
+          <a href="industry.html">Industry Landscape</a>
+          <a href="science.html">Proof-of-Scientific-Work</a>
+          <a href="protocol.html">MERA Protocol</a>
+          <a href="architecture.html">Architecture</a>
+          <a href="security.html">Security Notes</a>
+          <a href="faq.html" aria-current="page">FAQ</a>
+        </div>
+      </div>
+      <a href="index.html#start">Start</a>
+    </div>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="index.html">Home</a>
+      <span class="sep">/</span>
+      <span class="here">FAQ</span>
+    </nav>
+    <div class="eyebrow">Learn · 07</div>
+    <h1 class="page-title">Frequently asked<br><em>questions</em>.</h1>
+    <p class="page-lede">
+      Straight answers, including the ones the project would prefer not
+      to have to give. If a question here is answered with "no", the
+      answer is not hedging — it is the position.
+    </p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="prose-layout">
+
+    <aside class="toc">
+      <h5>Jump to</h5>
+      <ol>
+        <li><a href="#basic">The basics</a></li>
+        <li><a href="#mera">About Mera</a></li>
+        <li><a href="#crypto">Coins and markets</a></li>
+        <li><a href="#use">Using it</a></li>
+        <li><a href="#tech">Technical</a></li>
+        <li><a href="#contrib">Contributing</a></li>
+      </ol>
+    </aside>
+
+    <article class="prose">
+
+      <h2 id="basic">The basics</h2>
+
+      <div class="faq-item" open>
+        <details>
+          <summary>What is MLabChain in one sentence?</summary>
+          <div class="faq-body">
+            <p>
+              A local, single-user ledger that records what you trained,
+              when, with what parameters, and with what metrics, in a
+              form you can verify later by re-running the training.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Do I need a blockchain for this?</summary>
+          <div class="faq-body">
+            <p>
+              No. A signed JSON file on disk would give you most of the
+              same guarantees. The blockchain part adds three things: a
+              hash-linked history that makes tampering detectable, a
+              transferable unit that multiple parties can hold, and a
+              reward mechanism that pays for verified work.
+            </p>
+            <p>
+              If you only need a signed record, use GPG on a JSON file.
+              MLabChain exists because some people want the other three
+              things too.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Who is it for?</summary>
+          <div class="faq-body">
+            <p>
+              Researchers who train machine-learning models and want a
+              durable record of what they ran. Especially in fields like
+              high-energy physics, where an analysis may be re-derived
+              years after the fact and the original configuration is
+              often lost.
+            </p>
+            <p>
+              It is not for enterprises, not for financial applications,
+              and not for anyone who needs a permissionless network.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Does it replace MLOps tools or model registries?</summary>
+          <div class="faq-body">
+            <p>
+              No. It is smaller and narrower. MLflow, Weights &amp;
+              Biases, and DVC track experiments across a team. MLabChain
+              tracks one person's work on one machine, with an emphasis
+              on cryptographic verifiability rather than collaboration.
+            </p>
+            <p>
+              If you have a team, use a proper registry. If you are one
+              person and you want to be able to prove what you ran, use
+              MLabChain. There is no reason you cannot use both.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <h2 id="mera">About Mera</h2>
+
+      <div class="faq-item">
+        <details>
+          <summary>What is Mera?</summary>
+          <div class="faq-body">
+            <p>
+              Mera is the unit that the chain issues for verified ML
+              work. It is minted only when a submission measurably
+              improves the frontier of a registered challenge. It is
+              transferable on the chain to any other account.
+            </p>
+            <p>
+              It is not a currency, not a security, and not an
+              investment. It is a record of verified scientific work,
+              with a transferable representation.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Can I buy Mera?</summary>
+          <div class="faq-body">
+            <p>
+              No. There is no exchange, no liquidity pool, and no
+              market. Mera is issued by training models against
+              challenges and can be transferred between wallet
+              addresses on the same chain. That is the full extent of
+              its circulation.
+            </p>
+            <p>
+              If someone offers to sell you Mera, they are either
+              confused or scamming you.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Will Mera ever be worth something?</summary>
+          <div class="faq-body">
+            <p>
+              That is not a question the project can answer, and it is
+              not a question the project is trying to answer. Mera's
+              value, if any, would come from the scientific work it
+              represents and the willingness of some future community to
+              recognise that work.
+            </p>
+            <p>
+              The project does not promise a price, does not plan a
+              listing, and does not describe itself as an investment.
+              Treat it as a receipt, not as an asset.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Can I mine Mera?</summary>
+          <div class="faq-body">
+            <p>
+              You can earn Mera, but it is not mining in the Bitcoin
+              sense. Bitcoin mining is a hash grind. Earning Mera
+              requires training a model against a registered challenge
+              and submitting the result. The chain pays you only if
+              your submission improves the challenge's current best
+              quality.
+            </p>
+            <p>
+              There is a separate SHA-256 PoW step that seals blocks,
+              but its difficulty is a few leading zeroes and it takes
+              milliseconds. That step is not the source of Mera.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Why is Mera capped at 100 million?</summary>
+          <div class="faq-body">
+            <p>
+              The cap is a design choice, not a claim about future
+              value. It ensures that the sum of all rewards is bounded,
+              which simplifies the protocol and makes some categories of
+              attack (unbounded issuance through fabricated work)
+              impossible by construction.
+            </p>
+            <p>
+              The specific number, 100 million, is arbitrary. It was
+              chosen because it is large enough to accommodate many
+              challenges and small enough to fit comfortably in a
+              <code>u64</code> when multiplied by the atomic unit
+              multiplier.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <h2 id="crypto">Coins and markets</h2>
+
+      <div class="faq-item">
+        <details>
+          <summary>Is MLabChain a cryptocurrency?</summary>
+          <div class="faq-body">
+            <p>
+              No. A cryptocurrency requires a peer-to-peer network, an
+              exchange, liquidity, and a market that sets a price. None
+              of those exist here. MLabChain is a local ledger with an
+              optional multi-node testnet mode and a native unit.
+            </p>
+            <p>
+              Calling it a cryptocurrency would be misleading. The
+              project explicitly asks readers not to.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Why not just launch a coin? It could fund the project.</summary>
+          <div class="faq-body">
+            <p>
+              This question comes up every time someone new reads the
+              docs, and it deserves a real answer rather than a
+              dismissal.
+            </p>
+            <p>
+              The technical problem is called the <em>verification
+              asymmetry</em>. Bitcoin's work is expensive to produce and
+              cheap to verify — one hash check per block. Useful work is
+              expensive to produce and expensive to verify — you have to
+              re-run the training. A decentralized network requires
+              cheap verification. Useful work destroys the asymmetry.
+            </p>
+            <p>
+              This is why every "useful proof-of-work" project has
+              either collapsed, remained tiny, or quietly pivoted to
+              storing data for other crypto projects. Primecoin,
+              Gridcoin, and Filecoin are all instructive case studies.
+            </p>
+            <p>
+              The full analysis is on the
+              <a href="science.html">Proof-of-Scientific-Work</a> page.
+              The short version is: you can have useful work, or you can
+              have secure decentralized mining, and so far nobody has had
+              both.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>What about the ERC-20 contract?</summary>
+          <div class="faq-body">
+            <p>
+              The contract in <code>contracts/MeraScientific.sol</code>
+              is a representation template. It defines an ERC-20 token
+              with the same name and cap, and it includes a
+              <code>MINTER_ROLE</code> that a bridge authority would
+              hold in a future integration.
+            </p>
+            <p>
+              It is <strong>not</strong> a trustless bridge. There is no
+              code that reads the MLabChain L1 state, verifies a deposit
+              proof, or locks native Mera. The mint authority is a full
+              trust boundary. Anyone deploying this contract as-is is
+              centralizing issuance in a single key.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Is this legal in my jurisdiction?</summary>
+          <div class="faq-body">
+            <p>
+              The code is a research tool. Reading, running, and
+              modifying it is no different from reading, running, and
+              modifying any other open-source software.
+            </p>
+            <p>
+              Distributing a transferable token, offering it to the
+              public, or accepting it as payment raises securities law,
+              tax law, and AML questions that this project does not
+              address and cannot advise on. Consult a lawyer in your
+              jurisdiction before doing any of those things.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <h2 id="use">Using it</h2>
+
+      <div class="faq-item">
+        <details>
+          <summary>What do I need to run it?</summary>
+          <div class="faq-body">
+            <p>
+              Python 3.10 or newer, a C++17 compiler, CMake 3.20+, and
+              three system libraries: OpenSSL, SQLite3, and the Boost
+              headers. The build produces a single executable called
+              <code>mera_core</code>. The full build takes about a
+              minute on a modern laptop.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Does it need a GPU?</summary>
+          <div class="faq-body">
+            <p>
+              No. The only paid verifier in v0.3 is deterministic linear
+              regression, which runs on the CPU in pure Python. The
+              chain does not pay for GPU training.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Can I train a neural network and submit it?</summary>
+          <div class="faq-body">
+            <p>
+              You can train anything you want. You cannot submit
+              anything other than a <code>MLabChain-linear-v4</code>
+              verifier submission as a paid <code>ML_WORK</code>
+              transaction.
+            </p>
+            <p>
+              The chain pays for work whose output every node can
+              independently reproduce. A neural network trained with
+              stochastic gradient descent on a GPU is not reproducible
+              byte-for-byte across machines, so it cannot be paid. It
+              can still be recorded as provenance — as an artifact hash
+              — but not as monetary work.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>What happens if I lose my wallet file?</summary>
+          <div class="faq-body">
+            <p>
+              The balance is gone. There is no recovery mechanism. No
+              seed phrase, no social recovery, no central authority to
+              ask. This is true of every non-custodial system and is not
+              specific to MLabChain.
+            </p>
+            <p>
+              Back up the wallet file separately from the chain. Use
+              <code>wallet-backup</code> and store the result somewhere
+              you will still have access to in six months.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Can I run multiple nodes?</summary>
+          <div class="faq-body">
+            <p>
+              Yes, on the same machine or across a local network. The
+              reference P2P protocol is a line-based TCP layer with
+              sync and relay. Two nodes with the same genesis parameters
+              can reach consensus through it.
+            </p>
+            <p>
+              Do not expose the P2P port to the public Internet. The
+              protocol has no authentication, no encryption, and no
+              rate limiting.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <h2 id="tech">Technical</h2>
+
+      <div class="faq-item">
+        <details>
+          <summary>Why two languages?</summary>
+          <div class="faq-body">
+            <p>
+              Because the two halves answer to different requirements.
+              The scientific layer must be easy to change — Python. The
+              consensus layer must be stable and predictable — C++.
+            </p>
+            <p>
+              The split is described in detail on the
+              <a href="architecture.html">Architecture</a> page.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Why a subprocess instead of a library?</summary>
+          <div class="faq-body">
+            <p>
+              Crash isolation, auditable state transitions, and no FFI
+              layer. Each call to the core is a shell command a reader
+              can inspect. If the C++ core crashes, the Python session
+              survives with a clear error.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Why SQLite instead of a custom state format?</summary>
+          <div class="faq-body">
+            <p>
+              Because the state is defined by replaying the chain, not
+              by the database format. SQLite is a materialized view of
+              that state, chosen because it gives atomic transactions,
+              crash recovery, and an online backup API for free.
+            </p>
+            <p>
+              If you delete the database, you can rebuild it from the
+              chain. If you change the database by hand, validation will
+              detect it — every account is compared against a fresh
+              replay.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Why Ed25519 and not ECDSA or RSA?</summary>
+          <div class="faq-body">
+            <p>
+              Small signatures (64 bytes), fast verification, no
+              parameter choices, and no malleability concerns that
+              require special handling. RSA would produce signatures
+              hundreds of bytes long; ECDSA needs careful nonce
+              management that Ed25519 avoids by construction.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>Why is the reward capped at 50 Mera per proof?</summary>
+          <div class="faq-body">
+            <p>
+              To bound the maximum issuance from any single transaction.
+              Without a per-proof cap, a challenge author could register
+              a challenge with a very large budget and a very large
+              operation count, and a single submission could drain a
+              significant fraction of the remaining supply.
+            </p>
+            <p>
+              The cap is a conservative default. It can be overridden in
+              the source, but doing so requires a hard fork and should be
+              justified by a specific use case.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>What is the LSWU and why is it in every transaction?</summary>
+          <div class="faq-body">
+            <p>
+              LSWU stands for LabChain Scientific Work Unit. It is a
+              scientific audit score computed from the training-set size,
+              wall time, and quality of the model relative to the
+              baseline.
+            </p>
+            <p>
+              It is stored in every <code>ML_WORK</code> transaction as
+              provenance. It is <strong>not</strong> used to compute the
+              reward — that is integer-only and based on operations and
+              marginal quality. The LSWU is a separate, human-readable
+              number that an auditor can use to compare submissions on a
+              more intuitive scale.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <h2 id="contrib">Contributing</h2>
+
+      <div class="faq-item">
+        <details>
+          <summary>Is the project open source?</summary>
+          <div class="faq-body">
+            <p>
+              Yes, under the Apache License 2.0. The full source,
+              including the C++ core, the Python client, the contracts,
+              and the documentation, is available.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>What should I work on first?</summary>
+          <div class="faq-body">
+            <p>
+              The project's own list, in order of value:
+            </p>
+            <ol>
+              <li>Fix the four correctness bugs listed on the Security page.</li>
+              <li>Add tests for the untested half of the CHANGELOG claims.</li>
+              <li>Add a second verifier class — a small MLP with a deterministic training loop.</li>
+              <li>Add file-backed datasets so challenges can be defined against real data.</li>
+              <li>Write the bridge specification document, even without the bridge code.</li>
+            </ol>
+            <p>
+              Items 1 and 2 are a weekend's work each and would
+              meaningfully improve the project's reliability. Item 5 is
+              what a regulator or exchange would ask for first, before
+              any technical work on a bridge.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>What should I not work on?</summary>
+          <div class="faq-body">
+            <p>
+              Do not work on launching a token, building a market, or
+              integrating with an exchange. Those are not things the
+              project can honestly support, and pulling the project in
+              that direction would undermine the parts that do work.
+            </p>
+            <p>
+              If you want to build a financial product, build it as a
+              separate project with your own legal review. Do not tie
+              MLabChain's reputation to it.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details>
+          <summary>How do I report a bug?</summary>
+          <div class="faq-body">
+            <p>
+              Open an issue on the repository. Include the exact command
+              you ran, the version of Python and the compiler, and the
+              output. The protocol constants page lists every value that
+              might differ across builds.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="callout good" style="margin-top:48px;">
+        <h5>Something missing?</h5>
+        <p>
+          If a question you had is not here, open an issue and ask it.
+          The project's position on honesty applies to its own
+          documentation: if a question is worth asking, it is worth
+          answering in public.
+        </p>
+      </div>
+
+    </article>
+  </div>
+</main>
+
+<nav class="next-prev">
+  <a href="security.html">
+    <span class="lbl">← Previous</span>
+    <span class="ttl">Security Notes</span>
+  </a>
+  <a href="index.html" class="next">
+    <span class="lbl">Next →</span>
+    <span class="ttl">Back to MLabChain home</span>
+  </a>
+</nav>
+
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="science.html">Science</a> ·
+        <a href="protocol.html">Protocol</a> ·
+        <a href="faq.html">FAQ</a>
+      </div>
+    </div>
+    <div class="foot-right">
+      <img src="assets/mlabchain_txt.png" alt="">
+    </div>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

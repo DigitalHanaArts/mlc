@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Architecture — MLabChain</title>
+<meta name="description" content="The MLabChain system architecture: Python scientific layer, C++ consensus core, SQLite state, migration, and the explicit trust boundaries between them.">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  /* architecture-page only: layered diagram */
+  .layer-stack{
+    display:flex; flex-direction:column; gap:14px;
+    margin:32px 0;
+  }
+  .layer-box{
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px 24px;
+    background:var(--bg-1);
+    display:grid;
+    grid-template-columns:180px 1fr;
+    gap:22px;
+    align-items:start;
+    transition:border-color .35s var(--ease), background .35s var(--ease);
+  }
+  .layer-box:hover{ border-color:var(--line-hi); background:var(--bg-2); }
+  .layer-box .tag{
+    font-family:var(--mono);
+    font-size:.66rem;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--amber);
+    padding-top:4px;
+  }
+  .layer-box .body{ font-size:.94rem; color:var(--fg-1); }
+  .layer-box .body .sub{
+    display:block;
+    font-family:var(--mono);
+    font-size:.72rem;
+    color:var(--fg-3);
+    margin-top:8px;
+    letter-spacing:.04em;
+  }
+  @media (max-width:720px){
+    .layer-box{ grid-template-columns:1fr; gap:8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html"><span class="pulse"></span><img src="assets/mlabchain.png" alt="">MLabChain</a>
+    <div class="nav-menu">
+      <a href="index.html#idea">Idea</a>
+      <a href="index.html#pipe">Pipeline</a>
+      <a href="index.html#mera">Mera</a>
+      <div class="nav-drop">
+        <button type="button">Learn</button>
+        <div class="nav-drop-menu">
+          <a href="blockchain.html">Blockchain Primer</a>
+          <a href="industry.html">Industry Landscape</a>
+          <a href="science.html">Proof-of-Scientific-Work</a>
+          <a href="protocol.html">MERA Protocol</a>
+          <a href="architecture.html" aria-current="page">Architecture</a>
+          <a href="security.html">Security Notes</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+      </div>
+      <a href="index.html#start">Start</a>
+    </div>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="index.html">Home</a>
+      <span class="sep">/</span>
+      <span class="here">Architecture</span>
+    </nav>
+    <div class="eyebrow">Learn · 05</div>
+    <h1 class="page-title">The <em>architecture</em><br>of the system.</h1>
+    <p class="page-lede">
+      MLabChain is two programs: a Python scientific client and a C++
+      consensus core. They are separated by a subprocess boundary that
+      is small on purpose. This page explains what belongs where, why,
+      and what the boundary guarantees.
+    </p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="prose-layout">
+
+    <aside class="toc">
+      <h5>On this page</h5>
+      <ol>
+        <li><a href="#shape">System shape</a></li>
+        <li><a href="#python">Python layer</a></li>
+        <li><a href="#cpp">C++ core</a></li>
+        <li><a href="#boundary">The boundary</a></li>
+        <li><a href="#storage">Storage model</a></li>
+        <li><a href="#migration">Migration</a></li>
+        <li><a href="#build">Build system</a></li>
+        <li><a href="#trust">Trust boundaries</a></li>
+      </ol>
+    </aside>
+
+    <article class="prose">
+
+      <h2 id="shape">System shape</h2>
+      <p>
+        MLabChain deliberately splits into two programs, each with a
+        narrow responsibility and no overlap. The split exists because
+        the two halves answer to different requirements:
+      </p>
+      <ul>
+        <li>
+          The <strong>scientific layer</strong> must be easy to change.
+          New datasets, new verifiers, new training loops, new metrics
+          are all normal evolution of a research tool. It should be
+          written in the language most scientists already use: Python.
+        </li>
+        <li>
+          The <strong>consensus layer</strong> must be stable. Every
+          node has to agree on the exact same state transition for the
+          same block. It should be written in a language with explicit
+          control over integer arithmetic, memory layout, and error
+          handling: C++.
+        </li>
+      </ul>
+      <p>
+        Nothing in the C++ core knows what a "model" is. Nothing in the
+        Python layer knows what a Merkle tree is. That is the whole
+        design.
+      </p>
+
+      <h2 id="python">The Python layer</h2>
+      <p>
+        <code>mlabchain.py</code> is a single-file command-line tool. It
+        owns everything that touches scientific artifacts.
+      </p>
+
+      <div class="layer-stack">
+        <div class="layer-box">
+          <div class="tag">Training</div>
+          <div class="body">
+            Deterministic linear regression with a fixed SGD order.
+            Seeded dataset generation, deterministic train/test split.
+            <span class="sub">run_training() · train_linear_regression()</span>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="tag">Challenges</div>
+          <div class="body">
+            Manifest creation, canonical JSON serialisation, manifest
+            hashing, dataset commitment. The manifest format is
+            versioned and refused if the recorded hash does not match.
+            <span class="sub">Challenge dataclass · compute_hash()</span>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="tag">Artifacts</div>
+          <div class="body">
+            Writes <code>model.pkl</code>, <code>model.txt</code>, and
+            <code>proof.json</code> to disk. Streams SHA-256 over any
+            file in 1 MiB chunks.
+            <span class="sub">save_training_artifacts() · hash_file()</span>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="tag">Wallet</div>
+          <div class="body">
+            Ed25519 keypair generation, Scrypt + AES-GCM encryption,
+            checksum address derivation, key rotation and multisig
+            signing helpers.
+            <span class="sub">Wallet class · wallet_password()</span>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="tag">Transactions</div>
+          <div class="body">
+            Builds the exact canonical signing messages that the C++
+            core expects, signs them, and calls the core through a
+            subprocess.
+            <span class="sub">ml_message() · transfer_message()</span>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="tag">Verification</div>
+          <div class="body">
+            The <code>verify-ml</code> command re-executes the recorded
+            training, recomputes metrics, and compares them against the
+            transaction. This is the audit path, not a consensus rule.
+            <span class="sub">command_verify_ml()</span>
+          </div>
+        </div>
+      </div>
+
+      <h2 id="cpp">The C++ core</h2>
+      <p>
+        <code>mera_core</code> is a single executable. It is the
+        authoritative implementation of every state transition on the
+        chain.
+      </p>
+
+      <div class="layer-stack">
+        <div class="layer-box">
+          <div class="tag">Authentication</div>
+          <div class="body">
+            Ed25519 signature verification via OpenSSL. Address derivation
+            from public keys with checksum. Multisig threshold checking.
+            <span class="sub">verify_ed25519() · address_from_pubkey()</span>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="tag">State replay</div>
+          <div class="body">
+            Loads the canonical chain from SQLite, replays every
+            transaction from genesis, and derives the current state
+            from scratch. The database is a materialised view; the
+            chain is the source of truth.
+            <span class="sub">Replay · current_replay()</span>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="tag">Mempool</div>
+          <div class="body">
+            Per-sender nonce tracking with pending awareness, balance
+            reservation, fee-priority selection, and byte/count limits.
+            <span class="sub">submit() · select_for_block()</span>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="tag">Reward arithmetic</div>
+          <div class="body">
+            Integer-only fixed-point computation of
+            <code>quality_ppm</code>, <code>delta_q</code>, and the
+            final reward. Uses <code>boost::multiprecision::uint128_t</code>
+            for intermediate products.
+            <span class="sub">quality_ppm() · work_reward_for_quality()</span>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="tag">Fork choice</div>
+          <div class="body">
+            Cumulative chain work comparison, canonical chain replay,
+            reorg with pending-transaction re-insertion.
+            <span class="sub">accept_chain() · mine()</span>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="tag">P2P</div>
+          <div class="body">
+            Boost.Asio TCP server, line-based message protocol, block
+            and transaction relay, GETCHAIN for full chain sync.
+            <span class="sub">P2P class</span>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="tag">Governance</div>
+          <div class="body">
+            Timelocked parameter changes from a genesis-defined
+            multisig. Only fee parameters are modifiable.
+            <span class="sub">GOV_PARAM handler</span>
+          </div>
+        </div>
+      </div>
+
+      <h2 id="boundary">The boundary</h2>
+      <p>
+        The two programs communicate through a <strong>subprocess</strong>.
+        The Python layer invokes <code>mera_core</code> with command-line
+        arguments, and parses a simple <code>KEY=VALUE</code> response.
+      </p>
+
+      <pre><code><span class="c"># Python calls the core</span>
+result = subprocess.run(
+    [core_path, "submit-ml",
+     "--sender", wallet.address,
+     "--challenge-id", challenge_id,
+     "--manifest-sha256", manifest_hash,
+     "--model-sha256", model_hash,
+     # ... 20+ more arguments ...
+     "--signature", signature],
+    text=True, capture_output=True, timeout=60.0,
+)
+
+<span class="c"># C++ replies in a simple key=value format</span>
+TXID=6a8b3c...
+STATUS=accepted</code></pre>
+
+      <h3>Why a subprocess</h3>
+      <ul>
+        <li>
+          <strong>No FFI layer.</strong> A shared library would need a
+          C ABI, symbol versioning, and careful memory management across
+          the boundary. A subprocess needs none of that.
+        </li>
+        <li>
+          <strong>Crash isolation.</strong> If the C++ core segfaults,
+          the Python session survives with a clear error. If they were
+          linked in-process, a bug in either side would take down both.
+        </li>
+        <li>
+          <strong>Auditable.</strong> Every state transition is
+          expressible as a shell command. Any reader can inspect exactly
+          what the core was asked to do.
+        </li>
+      </ul>
+
+      <h3>Costs of the subprocess</h3>
+      <ul>
+        <li>
+          <strong>Process startup.</strong> Each invocation spawns a new
+          process and opens the SQLite database. For a single command
+          this is a few milliseconds. For a tight loop it would be too
+          slow — which is why the tool is not designed for tight loops.
+        </li>
+        <li>
+          <strong>Argument limits.</strong> Very large transactions must
+          be passed through temporary files or environment variables if
+          they exceed the OS argument size limit. In practice the current
+          transaction sizes are small enough that this has not been an
+          issue.
+        </li>
+        <li>
+          <strong>Error propagation.</strong> The C++ core returns
+          non-zero on failure and writes the error message to stderr.
+          The Python side raises <code>RuntimeError</code> with the same
+          message.
+        </li>
+      </ul>
+
+      <h2 id="storage">Storage model</h2>
+      <p>
+        State lives in a single SQLite database at
+        <code>mera_data/mera.sqlite</code>. SQLite is configured with
+        WAL mode, foreign keys enabled, and synchronous FULL.
+      </p>
+
+      <h3>Tables</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Table</th><th>Contents</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>meta</td><td>Network name, genesis hash, schema version, supply, parameters, governance config</td></tr>
+          <tr><td>accounts</td><td>Address, balance, nonce, current authorization public key</td></tr>
+          <tr><td>blocks</td><td>Block headers with producer signature and cumulative chain work</td></tr>
+          <tr><td>txs</td><td>Confirmed transactions, indexed by height and order</td></tr>
+          <tr><td>pending</td><td>Mempool, ordered by fee priority</td></tr>
+          <tr><td>challenges</td><td>Registered challenge state including best quality and budget remaining</td></tr>
+          <tr><td>work_claims</td><td>Reserved (challenge, dataset, model) tuples</td></tr>
+          <tr><td>gov_updates</td><td>Scheduled parameter changes with effective heights</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Indexes</h3>
+      <p>
+        Five indexes are maintained for the hot paths:
+      </p>
+      <ul>
+        <li><code>pending(sender, nonce)</code> — for pending-aware nonce checks</li>
+        <li><code>pending(fee DESC, seq ASC)</code> — for fee-priority selection</li>
+        <li><code>txs(height, ord)</code> — for block replay</li>
+        <li><code>txs(sender, nonce)</code> — for account history queries</li>
+        <li><code>blocks(height)</code> — for chain traversal</li>
+      </ul>
+
+      <h3>Atomicity</h3>
+      <p>
+        Block commitment is a single SQLite transaction. If any part
+        fails — replay, insertion, state update — the whole transaction
+        rolls back and the block is not committed. This is what makes
+        the database always consistent with the canonical chain.
+      </p>
+
+      <h2 id="migration">Migration from v0.2</h2>
+      <p>
+        v0.3 does not silently interpret a v0.2 database. When the core
+        opens a database whose <code>schema_version</code> does not match
+        <code>PROTOCOL_VERSION</code>, it refuses with a clear error.
+      </p>
+
+      <p>
+        The migration path is a separate tool:
+      </p>
+
+      <pre><code>python tools/migrate_v2.py \
+  --input ./old/mera_data/mera.sqlite \
+  --output ./migration/v2_snapshot.json</code></pre>
+
+      <p>
+        The output is an explicit snapshot containing:
+      </p>
+      <ul>
+        <li>Source schema version and network name.</li>
+        <li>Old genesis hash and tip hash.</li>
+        <li>Block and transaction counts.</li>
+        <li>Per-account balance and nonce.</li>
+        <li>Total balance.</li>
+        <li>A snapshot SHA-256 over the canonicalised JSON.</li>
+      </ul>
+
+      <div class="callout warn">
+        <h5>Why an explicit snapshot</h5>
+        <p>
+          Silently replaying v0.2 history under changed consensus rules
+          would be less safe than an explicit migration boundary. The
+          snapshot documents exactly what was in the old chain, so a
+          production migration can commit to it in a new genesis and
+          import balances under human review. The old chain remains
+          valid as an archival record.
+        </p>
+      </div>
+
+      <h2 id="build">Build system</h2>
+      <p>
+        The C++ core uses CMake. The Python side uses standard
+        <code>pyproject.toml</code>. On Linux and macOS the build is
+        driven by <code>build.sh</code>; on Windows by
+        <code>build.ps1</code>.
+      </p>
+
+      <h3>Dependencies</h3>
+      <ul>
+        <li><strong>OpenSSL</strong> — Ed25519 and SHA-256</li>
+        <li><strong>SQLite3</strong> — state storage</li>
+        <li><strong>Boost</strong> — Asio for TCP, cpp_int for 128-bit arithmetic</li>
+        <li><strong>cryptography</strong> (Python) — Ed25519, Scrypt, AES-GCM</li>
+      </ul>
+
+      <p>
+        The build produces a single binary:
+        <code>build/mera_core</code> on Unix,
+        <code>build/Release/mera_core.exe</code> on Windows.
+      </p>
+
+      <h3>CMake presets</h3>
+      <p>
+        A <code>CMakePresets.json</code> provides a
+        <code>release</code> preset:
+      </p>
+      <pre><code>cmake --preset release
+cmake --build --preset release
+ctest --preset release</code></pre>
+
+      <h3>Container build</h3>
+      <p>
+        A <code>Dockerfile</code> is provided for reproducible builds
+        and CI. The container image includes the compiler toolchain,
+        all libraries, and the Python runtime.
+      </p>
+
+      <h2 id="trust">Trust boundaries</h2>
+      <p>
+        Two programs means two sets of assumptions. The architecture
+        makes both explicit.
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Component</th><th>Trusts</th><th>Is trusted by</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Python client</td>
+            <td>The C++ core to enforce consensus</td>
+            <td>Nobody — it produces transactions that the core validates</td>
+          </tr>
+          <tr>
+            <td>C++ core</td>
+            <td>OpenSSL, SQLite, Boost</td>
+            <td>The Python client, and every other node on the network</td>
+          </tr>
+          <tr>
+            <td>Network peers</td>
+            <td>Nothing — all messages are untrusted input</td>
+            <td>Nothing — peers are anonymous</td>
+          </tr>
+          <tr>
+            <td>Verifier class</td>
+            <td>The node binary itself</td>
+            <td>The whole monetary system</td>
+          </tr>
+          <tr>
+            <td>Challenge author</td>
+            <td>Nothing beyond what the registry enforces</td>
+            <td>Nothing — a challenge is just a record</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The most important row is the verifier class. The entire
+        monetary mechanism depends on the correctness of
+        <code>MLabChain-linear-v4</code>, which is compiled into the
+        node binary. A bug there would allow invalid rewards. This is
+        why the core is small, and why the reward arithmetic uses integer
+        arithmetic only.
+      </p>
+
+      <div class="callout">
+        <h5>What is not in the trust boundary</h5>
+        <p>
+          The Python client's local reward estimate is not authoritative.
+          It is a preview. The core recomputes and either accepts or
+          rejects. If they disagree, the core wins — the Python side
+          prints the core's error message and exits.
+        </p>
+      </div>
+
+      <div class="callout good">
+        <h5>Take-away</h5>
+        <p>
+          Two programs, one boundary, no overlap. Python owns science.
+          C++ owns state. The subprocess boundary keeps them honest with
+          each other and keeps a bug in one from silently corrupting the
+          other.
+        </p>
+      </div>
+
+    </article>
+  </div>
+</main>
+
+<nav class="next-prev">
+  <a href="protocol.html">
+    <span class="lbl">← Previous</span>
+    <span class="ttl">MERA Protocol</span>
+  </a>
+  <a href="security.html" class="next">
+    <span class="lbl">Next →</span>
+    <span class="ttl">Security Notes</span>
+  </a>
+</nav>
+
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="science.html">Science</a> ·
+        <a href="protocol.html">Protocol</a> ·
+        <a href="faq.html">FAQ</a>
+      </div>
+    </div>
+    <div class="foot-right">
+      <img src="assets/mlabchain_txt.png" alt="">
+    </div>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

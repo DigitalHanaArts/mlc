@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The MERA Protocol — MLabChain</title>
+<meta name="description" content="The MERA protocol reference: challenge registry, ML_WORK transactions, integer reward arithmetic, account model, fork choice, governance, and the wire protocol.">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html"><span class="pulse"></span><img src="assets/mlabchain.png" alt="">MLabChain</a>
+    <div class="nav-menu">
+      <a href="index.html#idea">Idea</a>
+      <a href="index.html#pipe">Pipeline</a>
+      <a href="index.html#mera">Mera</a>
+      <div class="nav-drop">
+        <button type="button">Learn</button>
+        <div class="nav-drop-menu">
+          <a href="blockchain.html">Blockchain Primer</a>
+          <a href="industry.html">Industry Landscape</a>
+          <a href="science.html">Proof-of-Scientific-Work</a>
+          <a href="protocol.html" aria-current="page">MERA Protocol</a>
+          <a href="architecture.html">Architecture</a>
+          <a href="security.html">Security Notes</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+      </div>
+      <a href="index.html#start">Start</a>
+    </div>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap">
+    <nav class="crumbs">
+      <a href="index.html">Home</a>
+      <span class="sep">/</span>
+      <span class="here">MERA Protocol</span>
+    </nav>
+    <div class="eyebrow">Learn · 04</div>
+    <h1 class="page-title">The <em>MERA protocol</em>,<br>reference edition.</h1>
+    <p class="page-lede">
+      A complete description of the MLabChain v0.3 consensus rules,
+      monetary rules, and wire format. Every number here is enforced by
+      the C++ core; every formula is integer arithmetic. This is the
+      specification a re-implementation would need to interoperate with
+      the reference node.
+    </p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="prose-layout">
+
+    <aside class="toc">
+      <h5>On this page</h5>
+      <ol>
+        <li><a href="#overview">Protocol overview</a></li>
+        <li><a href="#challenges">Challenge registry</a></li>
+        <li><a href="#mlwork">ML_WORK transaction</a></li>
+        <li><a href="#reward">Reward arithmetic</a></li>
+        <li><a href="#accounts">Accounts and nonces</a></li>
+        <li><a href="#blocks">Blocks and fork choice</a></li>
+        <li><a href="#difficulty">Difficulty retarget</a></li>
+        <li><a href="#governance">Governance timelock</a></li>
+        <li><a href="#wire">Wire protocol</a></li>
+        <li><a href="#params">Protocol constants</a></li>
+      </ol>
+    </aside>
+
+    <article class="prose">
+
+      <h2 id="overview">Protocol overview</h2>
+      <p>
+        MLabChain v0.3 is a signed, replay-validated ledger for
+        deterministic machine-learning work. The protocol has two
+        independent mechanisms that are deliberately kept apart:
+      </p>
+
+      <ul>
+        <li>
+          <strong>Chain sealing.</strong> A low-difficulty SHA-256
+          Proof-of-Work combined with an Ed25519 signature from the
+          block producer. This is the Sybil-resistance signal and the
+          ordering mechanism.
+        </li>
+        <li>
+          <strong>Scientific work.</strong> A separate transaction type,
+          <code>ML_WORK</code>, that commits a challenge, a model, an
+          architecture, and metrics. This is the monetary mechanism.
+        </li>
+      </ul>
+
+      <p>
+        Changing the ML verifier does not affect block sealing. Changing
+        the PoW difficulty does not affect ML rewards. This separation is
+        what allows the protocol to make honest claims about each piece.
+      </p>
+
+      <div class="callout">
+        <h5>Protocol version</h5>
+        <p>
+          <code>PROTOCOL_VERSION = 3</code>. A node refuses to open a
+          SQLite database whose <code>schema_version</code> does not
+          match. Migration from v0.2 requires an explicit snapshot
+          ceremony described in
+          <a href="architecture.html#migration">Architecture § Migration</a>.
+        </p>
+      </div>
+
+      <h2 id="challenges">Challenge registry</h2>
+      <p>
+        A challenge is an on-chain object that pins a scientific task.
+        Any account can register a challenge, subject to a bond and a
+        per-proposer limit. Once registered, the challenge's parameters
+        are immutable.
+      </p>
+
+      <h3>Registered fields</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>challenge_id</td><td>string</td><td>Unique identifier</td></tr>
+          <tr><td>manifest_hash</td><td>hex64</td><td>SHA-256 of the canonical manifest</td></tr>
+          <tr><td>dataset_hash</td><td>hex64</td><td>Commitment to the dataset</td></tr>
+          <tr><td>verifier</td><td>string</td><td>Verifier class (<code>MLabChain-linear-v4</code>)</td></tr>
+          <tr><td>metric</td><td>string</td><td><code>NMSE</code></td></tr>
+          <tr><td>split_rule</td><td>string</td><td><code>first_fraction</code></td></tr>
+          <tr><td>n_samples</td><td>u64</td><td>Total samples in the dataset</td></tr>
+          <tr><td>n_features</td><td>u64</td><td>Feature dimensionality</td></tr>
+          <tr><td>train_fraction_ppm</td><td>u64</td><td>Train fraction in ppm (e.g. 800000 = 0.8)</td></tr>
+          <tr><td>max_epochs</td><td>u64</td><td>Bound on submitted training runs</td></tr>
+          <tr><td>baseline_scaled</td><td>u64</td><td>Baseline NMSE × 1e9 (fixed at 1e9)</td></tr>
+          <tr><td>budget</td><td>u64</td><td>Finite Mera budget, in atomic units</td></tr>
+          <tr><td>created_height</td><td>u64</td><td>Block height at registration</td></tr>
+          <tr><td>activation_height</td><td>u64</td><td>created_height + CHALLENGE_MATURITY</td></tr>
+          <tr><td>expiry_height</td><td>u64</td><td>created_height + CHALLENGE_LIFETIME</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Lifecycle</h3>
+      <ol>
+        <li><strong>Registration.</strong> A <code>CHALLENGE_REGISTER</code> transaction pays the bond and creates the challenge record. It is <em>not active</em> yet.</li>
+        <li><strong>Maturity.</strong> After <code>CHALLENGE_MATURITY = 8</code> blocks, the challenge accepts <code>ML_WORK</code> submissions.</li>
+        <li><strong>Active.</strong> Until <code>expiry_height</code>, submissions that improve the frontier are paid from the challenge budget.</li>
+        <li><strong>Closed.</strong> After expiry, no further submissions are accepted. The remaining budget is not reclaimed — it stays reserved for the challenge forever.</li>
+      </ol>
+
+      <h3>Anti-farming constraints</h3>
+      <ul>
+        <li>Minimum <code>n_samples</code>: 1000</li>
+        <li>Maximum <code>n_samples</code>: 100,000,000</li>
+        <li>Maximum <code>n_features</code>: 4096</li>
+        <li><code>train_fraction_ppm</code> in [100000, 999999]</li>
+        <li>Maximum <code>max_epochs</code>: 100,000</li>
+        <li>Per-proposer active challenges: at most 8</li>
+      </ul>
+
+      <h2 id="mlwork">ML_WORK transaction</h2>
+      <p>
+        An <code>ML_WORK</code> transaction is the sole path to monetary
+        issuance. It commits the training claim and the metadata that
+        every node uses to validate it.
+      </p>
+
+      <h3>Fields</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Field</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>sender</td><td>Submitting account address</td></tr>
+          <tr><td>challenge_id</td><td>The registered challenge</td></tr>
+          <tr><td>manifest_hash</td><td>Must match the registered challenge</td></tr>
+          <tr><td>dataset_hash</td><td>Must match the registered challenge</td></tr>
+          <tr><td>model_hash</td><td>SHA-256 of the trained model artifact</td></tr>
+          <tr><td>arch_hash</td><td>SHA-256 of the architecture description</td></tr>
+          <tr><td>ops</td><td>Symbolic operation count (must match the formula)</td></tr>
+          <tr><td>n_train</td><td>Derived from n_samples × train_fraction_ppm</td></tr>
+          <tr><td>n_features</td><td>Must match the challenge</td></tr>
+          <tr><td>epochs</td><td>Must be ≤ challenge.max_epochs</td></tr>
+          <tr><td>nmse_scaled</td><td>Model NMSE × 1e9</td></tr>
+          <tr><td>baseline_scaled</td><td>Must match challenge.baseline_scaled</td></tr>
+          <tr><td>work_reward</td><td>Claimed reward in atomic units</td></tr>
+          <tr><td>wall_ms</td><td>Reported training time (audit only)</td></tr>
+          <tr><td>lswu_micro</td><td>LSWU score × 1e6 (audit only)</td></tr>
+          <tr><td>nonce</td><td>Account nonce</td></tr>
+          <tr><td>fee</td><td>Work fee in atomic units</td></tr>
+          <tr><td>public_key</td><td>Ed25519 public key of the sender</td></tr>
+          <tr><td>signature</td><td>Ed25519 signature over the canonical message</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Canonical signing message</h3>
+      <pre><code>ML_WORK-V3|sender|challenge_id|manifest_hash|dataset_hash|
+model_hash|arch_hash|ops|n_train|n_features|epochs|
+nmse_scaled|baseline_scaled|work_reward|wall_ms|lswu_micro|
+nonce|fee|public_key|note</code></pre>
+
+      <p>
+        Fields are joined with <code>|</code>. The signature is Ed25519
+        over the UTF-8 bytes of that string. The transaction ID is
+        <code>SHA256(message + "|" + signature)</code>.
+      </p>
+
+      <h2 id="reward">Reward arithmetic</h2>
+      <p>
+        Rewards are computed in integer arithmetic in the C++ core. No
+        floating-point value is ever used in a state transition. This is
+        deliberate: a two-node network must agree on the exact issuance,
+        byte for byte, block for block.
+      </p>
+
+      <h3>Quality</h3>
+      <p>
+        The improvement of a model over the baseline is scaled to a
+        million parts:
+      </p>
+      <pre><code><span class="c"># fixed-point NMSE, scaled by 1e9</span>
+quality_ppm = clamp(
+    (baseline_scaled − nmse_scaled) × 1,000,000 / baseline_scaled,
+    0,
+    1,000,000
+)</code></pre>
+
+      <h3>Marginal delta</h3>
+      <p>
+        Reward is measured against the challenge's <em>current best</em>
+        accepted quality, not against the original baseline:
+      </p>
+      <pre><code>delta_q = quality_ppm − challenge.best_quality_ppm</code></pre>
+
+      <p>
+        If <code>delta_q ≤ 0</code>, the submission is rejected with
+        <code>"ML result does not improve challenge best"</code>. There
+        is no partial credit for matching or falling short.
+      </p>
+
+      <h3>Reward</h3>
+      <pre><code>reward = min(
+    MAX_WORK_REWARD,
+    ops × delta_q × ATOMIC_PER_MERA / (OPS_PER_MERA × 1,000,000)
+)</code></pre>
+
+      <p>
+        With <code>ATOMIC_PER_MERA = 100,000,000</code>,
+        <code>OPS_PER_MERA = 10,000,000</code>, and
+        <code>MAX_WORK_REWARD = 50 × ATOMIC_PER_MERA</code>.
+      </p>
+
+      <h3>Constraint stack</h3>
+      <p>
+        A valid reward must satisfy all of:
+      </p>
+      <ul>
+        <li><code>reward == expected_reward(ops, delta_q)</code> (exact match)</li>
+        <li><code>reward ≤ challenge.budget_remaining</code></li>
+        <li><code>total_supply + reward ≤ MAX_SUPPLY</code></li>
+        <li><code>ops == epochs × n_train × (3 × n_features + 4)</code></li>
+        <li>The claim <code>(challenge, dataset, model)</code> has not been paid before</li>
+      </ul>
+
+      <div class="callout warn">
+        <h5>What the core does not verify</h5>
+        <p>
+          The C++ core checks that the reward is <em>arithmetically
+          consistent</em> with the submitted metrics. It does not check
+          that the metrics are honest. A malicious submitter could sign
+          an <code>ML_WORK</code> transaction with a fabricated
+          <code>nmse_scaled</code> and pass the core's checks. The only
+          defence is the Python <code>verify-ml</code> audit, which
+          re-executes the training. See
+          <a href="science.html">Proof-of-Scientific-Work</a>.
+        </p>
+      </div>
+
+      <h2 id="accounts">Accounts and nonces</h2>
+      <p>
+        Accounts are identified by an address derived from an Ed25519
+        public key:
+      </p>
+
+      <pre><code><span class="c"># Standard account</span>
+payload = SHA256(public_key_bytes)[:40]
+checksum = SHA256("MERA-ADDR-V3|MERA1" + payload)[:8]
+address = "MERA1" + payload + checksum
+
+<span class="c"># Multisig account</span>
+sorted_keys = sort(public_keys)
+material = "MSIG|" + threshold + "|" + join(sorted_keys, ",")
+payload = SHA256(material)[:40]
+checksum = SHA256("MERA-ADDR-V3|MERA2" + payload)[:8]
+address = "MERA2" + payload + checksum</code></pre>
+
+      <p>
+        Every account has a monotonically increasing nonce. A
+        transaction from an account is valid only if
+        <code>tx.nonce == account.nonce + pending_count + 1</code>, so
+        the mempool can hold multiple pending transactions from the same
+        sender without ambiguity.
+      </p>
+
+      <h3>Key rotation</h3>
+      <p>
+        A <code>KEY_ROTATE</code> transaction changes the authorized
+        public key without changing the address. After rotation, only
+        the new key can authorise transfers, block proposals, and ML
+        submissions from that account.
+      </p>
+
+      <h3>Multisig</h3>
+      <p>
+        A <code>MULTISIG_TRANSFER</code> requires <code>m</code>
+        signatures from an <code>n</code>-key set. Keys must be sorted
+        canonically and unique. The threshold and key set are included in
+        the transaction and checked against the derived address.
+      </p>
+
+      <h2 id="blocks">Blocks and fork choice</h2>
+      <p>
+        A block header commits to the previous block, the Merkle root of
+        its transactions, the producer address, the producer's Ed25519
+        signature, and the cumulative chain work.
+      </p>
+
+      <pre><code><span class="c"># Block header (canonical form)</span>
+MERA-BLOCK-V3|height|timestamp_ms|previous_hash|merkle_root|
+difficulty|nonce|producer|producer_pubkey|producer_signature|
+total_ops|total_rewards
+
+<span class="c"># Block hash</span>
+block_hash = SHA256(header)</code></pre>
+
+      <h3>Producer signature</h3>
+      <p>
+        The producer signs a message that excludes the nonce and the
+        block hash, so the signature is stable while the nonce is being
+        ground:
+      </p>
+      <pre><code>MERA-BLOCK-PROPOSAL-V3|height|timestamp_ms|previous_hash|
+merkle_root|difficulty|producer|producer_pubkey|
+total_ops|total_rewards</code></pre>
+
+      <h3>Fork choice</h3>
+      <p>
+        Nodes accept the chain with the highest cumulative work. Ties
+        break by lower tip hash. The rule is applied as:
+      </p>
+      <ul>
+        <li>Compute <code>chain_work</code> as the sum of <code>2^(4 × difficulty)</code> over all blocks.</li>
+        <li>A candidate chain is valid only if it replays from genesis without error.</li>
+        <li>If <code>candidate.work &gt; local.work</code>, replace. If equal, lower tip hash wins.</li>
+        <li>On replacement, orphaned transactions from pending are re-added to the mempool.</li>
+      </ul>
+
+      <h3>Timestamp rules</h3>
+      <ul>
+        <li>Must be strictly greater than the median of the last 11 block timestamps.</li>
+        <li>Must be no more than <code>MAX_FUTURE_MS = 120,000</code> ms ahead of the node's clock.</li>
+      </ul>
+
+      <h2 id="difficulty">Difficulty retarget</h2>
+      <p>
+        Every <code>DIFFICULTY_WINDOW = 16</code> blocks, the difficulty
+        is adjusted toward a target block time of
+        <code>TARGET_BLOCK_MS = 60,000</code>. The adjustment is bounded
+        to a single step of ±1 and clamped to <code>[1, 8]</code>.
+      </p>
+
+      <pre><code>target_span = TARGET_BLOCK_MS × DIFFICULTY_WINDOW
+elapsed     = block[parent].timestamp_ms − block[start].timestamp_ms
+
+if elapsed &lt; target_span / 2:
+    difficulty += 1
+elif elapsed &gt; target_span × 2:
+    difficulty -= 1</code></pre>
+
+      <p>
+        The retarget is deterministic: given the same chain, every node
+        computes the same difficulty for the next block. This is required
+        for consensus and is checked during validation.
+      </p>
+
+      <h2 id="governance">Governance timelock</h2>
+      <p>
+        A governance multisig, defined at genesis, can schedule changes
+        to a bounded set of parameters. The change takes effect after a
+        delay of <code>GOVERNANCE_TIMELOCK = 32</code> blocks.
+      </p>
+
+      <h3>Modifiable parameters</h3>
+      <ul>
+        <li><code>min_fee</code></li>
+        <li><code>min_work_fee</code></li>
+        <li><code>challenge_bond</code></li>
+      </ul>
+
+      <h3>Immutable parameters</h3>
+      <ul>
+        <li>Maximum supply</li>
+        <li>Faucet enablement</li>
+        <li>Reward formula constants</li>
+        <li>Block size and transaction size limits</li>
+      </ul>
+
+      <p>
+        The immutable set is enforced by the code: there is no
+        <code>GOV_PARAM</code> key that can modify them.
+      </p>
+
+      <h2 id="wire">Wire protocol</h2>
+      <p>
+        MLabChain's P2P protocol is a line-based request/response. Each
+        message is a single line terminated by <code>\n</code>. Fields
+        within a message are separated by <code>|</code>, and any field
+        that may contain <code>|</code> is hex-encoded before transport.
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Message</th><th>Request</th><th>Response</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>PING</td><td><code>PING</code></td><td><code>PONG</code></td></tr>
+          <tr><td>STATUS</td><td><code>STATUS</code></td><td><code>STATUS|height|tip|chain_work</code></td></tr>
+          <tr><td>GETCHAIN</td><td><code>GETCHAIN</code></td><td>Sequence of <code>BLOCK|wire</code>, ending with <code>END</code></td></tr>
+          <tr><td>TX relay</td><td><code>TX|wire</code></td><td><code>OK</code> or <code>ERROR|reason</code></td></tr>
+          <tr><td>BLOCK relay</td><td><code>BLOCK|wire</code></td><td><code>OK</code>, <code>SYNC_REQUIRED</code>, or <code>ERROR|reason</code></td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The wire format is deliberately simple: no framing, no
+        encryption, no version negotiation, no peer authentication. The
+        reference protocol is a testnet implementation. See
+        <a href="security.html">Security Notes</a> for what a
+        production protocol would need to add.
+      </p>
+
+      <h3>Wire encoding for transactions</h3>
+      <p>
+        A transaction is serialised as 36 hex-encoded fields separated
+        by <code>|</code>. The full order is:
+      </p>
+      <pre><code>type|sender|recipient|amount|fee|nonce|challenge_id|
+manifest_hash|dataset_hash|model_hash|arch_hash|ops|
+n_train|n_features|epochs|nmse_scaled|baseline_scaled|
+work_reward|wall_ms|lswu_micro|public_key|signature|note|
+train_fraction_ppm|max_epochs|budget|challenge_verifier|
+challenge_metric|challenge_split_rule|new_public_key|
+multisig_threshold|multisig_keys|multisig_sigs|
+gov_key|gov_value|gov_effective_height</code></pre>
+
+      <h2 id="params">Protocol constants</h2>
+
+      <h3>Supply and decimals</h3>
+      <table class="data-table">
+        <thead><tr><th>Constant</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>ATOMIC_PER_MERA</td><td class="num">100,000,000</td></tr>
+          <tr><td>MAX_SUPPLY</td><td class="num">100,000,000 MERA</td></tr>
+          <tr><td>OPS_PER_MERA</td><td class="num">10,000,000</td></tr>
+          <tr><td>MAX_WORK_REWARD</td><td class="num">50 MERA</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Fees</h3>
+      <table class="data-table">
+        <thead><tr><th>Constant</th><th>Devnet</th><th>Testnet / Mainnet</th></tr></thead>
+        <tbody>
+          <tr><td>MIN_TX_FEE</td><td class="num">1,000</td><td class="num">10,000</td></tr>
+          <tr><td>MIN_WORK_FEE</td><td class="num">10,000</td><td class="num">100,000</td></tr>
+          <tr><td>CHALLENGE_BOND</td><td class="num">100,000</td><td class="num">1,000,000</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Limits</h3>
+      <table class="data-table">
+        <thead><tr><th>Constant</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>MAX_BLOCK_TX</td><td class="num">2,048</td></tr>
+          <tr><td>MAX_MEMPOOL_TX</td><td class="num">20,000</td></tr>
+          <tr><td>MAX_PENDING_PER_SENDER</td><td class="num">32</td></tr>
+          <tr><td>MAX_TX_BYTES</td><td class="num">65,536</td></tr>
+          <tr><td>MAX_BLOCK_BYTES</td><td class="num">1,048,576</td></tr>
+          <tr><td>MAX_NOTE_BYTES</td><td class="num">4,096</td></tr>
+          <tr><td>MAX_OPS_PER_WORK</td><td class="num">10^15</td></tr>
+          <tr><td>MAX_CHALLENGE_BUDGET</td><td class="num">1,000 MERA</td></tr>
+          <tr><td>MAX_SIGNERS</td><td class="num">16</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Timing</h3>
+      <table class="data-table">
+        <thead><tr><th>Constant</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>TARGET_BLOCK_MS</td><td class="num">60,000</td></tr>
+          <tr><td>DIFFICULTY_WINDOW</td><td class="num">16</td></tr>
+          <tr><td>CHALLENGE_MATURITY</td><td class="num">8 blocks</td></tr>
+          <tr><td>CHALLENGE_LIFETIME</td><td class="num">1,000 blocks</td></tr>
+          <tr><td>GOVERNANCE_TIMELOCK</td><td class="num">32 blocks</td></tr>
+          <tr><td>MAX_FUTURE_MS</td><td class="num">120,000</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Difficulty bounds</h3>
+      <table class="data-table">
+        <thead><tr><th>Constant</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>BASE_DIFFICULTY</td><td class="num">2</td></tr>
+          <tr><td>MIN_DIFFICULTY</td><td class="num">1</td></tr>
+          <tr><td>MAX_DIFFICULTY</td><td class="num">8</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout good">
+        <h5>Reference implementation</h5>
+        <p>
+          The authoritative implementation of every constant and every
+          rule on this page is <code>cpp/mera_core.cpp</code>. When the
+          code and this page disagree, the code is correct and this page
+          is a bug report waiting to happen.
+        </p>
+      </div>
+
+    </article>
+  </div>
+</main>
+
+<nav class="next-prev">
+  <a href="science.html">
+    <span class="lbl">← Previous</span>
+    <span class="ttl">Proof-of-Scientific-Work</span>
+  </a>
+  <a href="architecture.html" class="next">
+    <span class="lbl">Next →</span>
+    <span class="ttl">Architecture</span>
+  </a>
+</nav>
+
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="science.html">Science</a> ·
+        <a href="protocol.html">Protocol</a> ·
+        <a href="faq.html">FAQ</a>
+      </div>
+    </div>
+    <div class="foot-right">
+      <img src="assets/mlabchain_txt.png" alt="">
+    </div>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

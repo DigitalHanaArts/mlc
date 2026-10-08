@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The reproducibility problem — MLabChain</title>
+<meta name="description" content="Why scientific reproducibility is hard, what determinism actually means in machine learning, and why MLabChain can pay for one narrow class of ML work and not the rest.">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+  /* Reproducibility ladder — page-specific visual */
+  .ladder{
+    margin:32px 0;border:1px solid var(--line);border-radius:var(--radius-lg);
+    background:linear-gradient(135deg,var(--bg-1) 0%,var(--bg-2) 100%);
+    padding:8px 0;overflow:hidden;position:relative;
+  }
+  .ladder::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(circle at 15% 20%,rgba(245,182,66,.06),transparent 45%),
+      radial-gradient(circle at 85% 80%,rgba(78,205,196,.04),transparent 45%);
+  }
+  .rung{
+    display:grid;grid-template-columns:80px 1fr auto;
+    gap:22px;align-items:center;
+    padding:18px 26px;
+    border-bottom:1px solid var(--line);
+    position:relative;z-index:1;
+    transition:background .3s var(--ease);
+  }
+  .rung:last-child{border-bottom:none}
+  .rung:hover{background:rgba(245,182,66,.02)}
+  .rung .lvl{
+    font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--amber);font-weight:500;
+  }
+  .rung .ttl{
+    font-family:var(--sans);font-weight:600;font-size:1rem;
+    color:var(--fg);margin-bottom:4px;
+  }
+  .rung .sub{
+    font-family:var(--mono);font-size:.72rem;color:var(--fg-3);
+    letter-spacing:.04em;line-height:1.5;
+  }
+  .rung .tag{
+    font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;
+    text-transform:uppercase;padding:5px 10px;
+    border:1px solid var(--line-hi);border-radius:2px;
+    white-space:nowrap;
+  }
+  .rung.good .tag{color:var(--lime);border-color:rgba(184,233,134,.35)}
+  .rung.edge .tag{color:var(--amber);border-color:rgba(245,182,66,.35)}
+  .rung.bad  .tag{color:var(--coral);border-color:rgba(255,92,68,.35)}
+  .rung.bad  .lvl{color:var(--coral)}
+  .rung.edge .lvl{color:var(--amber)}
+  .rung.good .lvl{color:var(--lime)}
+  @media (max-width:640px){
+    .rung{grid-template-columns:1fr;gap:8px;padding:16px 20px}
+    .rung .tag{justify-self:start}
+  }
+
+  /* Two-column compare */
+  .compare{
+    display:grid;grid-template-columns:1fr 1fr;
+    gap:0;border:1px solid var(--line);border-radius:var(--radius-lg);
+    overflow:hidden;margin:28px 0;
+  }
+  .compare > div{padding:28px clamp(22px,3.4vw,32px)}
+  .compare .left{
+    background:linear-gradient(160deg,rgba(184,233,134,.05),transparent 60%);
+    border-right:1px solid var(--line);
+  }
+  .compare .right{
+    background:linear-gradient(160deg,rgba(255,92,68,.05),transparent 60%);
+  }
+  .compare h4{
+    display:flex;align-items:center;gap:12px;margin-bottom:18px;
+    font-family:var(--mono);font-size:.7rem;letter-spacing:.22em;
+    text-transform:uppercase;font-weight:500;
+  }
+  .compare h4 .dot{width:8px;height:8px;border-radius:50%}
+  .compare .left h4{color:var(--lime)}
+  .compare .left h4 .dot{background:var(--lime);box-shadow:0 0 10px var(--lime)}
+  .compare .right h4{color:var(--coral)}
+  .compare .right h4 .dot{background:var(--coral);box-shadow:0 0 10px var(--coral)}
+  .compare ul{list-style:none;padding:0;margin:0}
+  .compare li{
+    padding:9px 0 9px 22px;position:relative;
+    border-bottom:1px solid var(--line);
+    font-size:.92rem;color:var(--fg-1);
+  }
+  .compare li:last-child{border-bottom:none}
+  .compare li::before{
+    content:"";position:absolute;left:0;top:15px;
+    width:10px;height:1px;
+  }
+  .compare .left li::before{background:var(--lime)}
+  .compare .right li::before{background:var(--coral)}
+  @media (max-width:820px){
+    .compare{grid-template-columns:1fr}
+    .compare .left{border-right:none;border-bottom:1px solid var(--line)}
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html">
+      <span class="pulse"></span><img src="assets/mlabchain.png" alt="">MLabChain
+    </a>
+    <div class="nav-menu">
+      <a href="index.html">Home</a>
+      <a href="blockchain.html">Blockchain</a>
+      <a href="industry.html">Industry</a>
+      <a href="science.html" class="active">Science</a>
+      <a href="mlabchain.html">MLabChain</a>
+      <a href="mera.html">Mera</a>
+      <a href="docs.html">Docs</a>
+      <a href="about.html">About</a>
+    </div>
+    <button class="nav-toggle" aria-label="Menu"><span></span></button>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap page-hero-in">
+    <nav class="crumbs">
+      <a href="index.html">Home</a><span class="sep">/</span><span>Science</span>
+    </nav>
+    <div class="eyebrow rev">Scientific context</div>
+    <h1 class="h1 rev d1">The reproducibility<br><em>problem.</em></h1>
+    <p class="lede rev d2" style="margin-top:24px">
+      Why scientific results are hard to reproduce, what determinism actually
+      means in modern machine learning, and why MLabChain can pay for one
+      narrow class of ML work and not the rest of it.
+    </p>
+  </div>
+</header>
+
+<div class="article">
+  <aside class="article-toc rev">
+    <div class="lbl">On this page</div>
+    <ol>
+      <li><a href="#problem">The problem</a></li>
+      <li><a href="#means">What reproducible means</a></li>
+      <li><a href="#ladder">The determinism ladder</a></li>
+      <li><a href="#verifiability">The verifiability boundary</a></li>
+      <li><a href="#lineage">The physics lineage</a></li>
+      <li><a href="#mlclass">Why this class of ML</a></li>
+      <li><a href="#verified">What "verified" means here</a></li>
+      <li><a href="#lswu">The LSWU audit score</a></li>
+      <li><a href="#not">What MLabChain does not solve</a></li>
+      <li><a href="#reading">Further reading</a></li>
+    </ol>
+  </aside>
+
+  <article class="article-body">
+
+    <h2 id="problem"><span class="num">01</span>The reproducibility problem</h2>
+    <p>
+      Science is supposed to be reproducible. A result that cannot be
+      independently obtained is not a result — it is an anecdote, or a bug.
+      And yet a large fraction of published computational work cannot be
+      reproduced by anyone, including the authors, six months after it was
+      done.
+    </p>
+    <p>
+      This is not a moral failing. It is a structural problem. The
+      computational record of an analysis is spread across dozens of files
+      in dozens of places: the source code in one repository, the data in
+      another, the configuration in a YAML file someone edited locally, the
+      model weights in a checkpoint whose training script no longer matches,
+      the exact library versions in an environment that has since been
+      upgraded, the exact random seed in a shell history that was never
+      committed.
+    </p>
+    <p>
+      When a paper is written, the authors know what they did. Two years
+      later, they *think* they know. Five years later, they know they used
+      to know. The record has drifted.
+    </p>
+    <p>
+      This is a specific and tractable problem. It is not the same as
+      fraud, and it is not the same as sloppy work. It is the simple,
+      relentless entropy of computational artifacts over time, and it
+      affects careful people as much as careless ones.
+    </p>
+
+    <div class="callout info">
+      <div class="ttl">A concrete example</div>
+      <p>
+        A researcher trains a classifier, writes a paper, publishes the
+        code and the model checkpoint. Six months later, a reader tries to
+        reproduce the reported accuracy. The code runs, but the accuracy
+        is 2% off. Was the difference caused by a library upgrade, a
+        different CUDA version, a missing random seed, or a subtle change
+        to the train/test split? Without a record of what the training
+        actually did, there is no way to tell.
+      </p>
+    </div>
+
+    <h2 id="means"><span class="num">02</span>What "reproducible" actually means</h2>
+    <p>
+      The word is used loosely in practice, and this causes as much
+      confusion as the underlying problem. There are at least four
+      different things that a claim of reproducibility can mean.
+    </p>
+    <ol>
+      <li><strong>Replicable.</strong> A different team, with their own
+      data and their own methods, arrives at a consistent conclusion. This
+      is the strongest claim in experimental science and it is what the
+      word usually means to a physicist or a biologist.</li>
+      <li><strong>Reproducible by others.</strong> Another team takes the
+      authors' code, data, and configuration and produces the same result
+      on their own hardware. This is the standard claim in computational
+      work.</li>
+      <li><strong>Reproducible by the authors.</strong> The original team
+      re-runs their own pipeline, using their own artifacts, and gets the
+      same result. Surprisingly often this is the claim that fails first.</li>
+      <li><strong>Recorded.</strong> The authors can prove *what they
+      did* — the exact inputs, the exact configuration, the exact
+      artifacts — even if nobody has yet re-run it. This is the weakest
+      claim, and it is the only one that a chain can make directly.</li>
+    </ol>
+    <p>
+      MLabChain addresses (4) and helps with (3). It does not, by itself,
+      produce (1) or (2). A chain does not reproduce an experiment; it
+      records the claim that one was performed. Whether the claim is true
+      is a separate question, and — for the narrow class of work
+      MLabChain pays for — a separately checkable one.
+    </p>
+
+    <h2 id="ladder"><span class="num">03</span>The determinism ladder</h2>
+    <p>
+      Whether an analysis is reproducible at all depends on how much of the
+      pipeline is deterministic. Most computational work sits somewhere on
+      a ladder from "fully deterministic" to "irreproducible by
+      construction", and the position on that ladder determines what kind
+      of verification is even possible.
+    </p>
+
+    <div class="ladder">
+      <div class="rung good">
+        <div class="lvl">Tier 4</div>
+        <div>
+          <div class="ttl">Fully deterministic</div>
+          <div class="sub">Fixed seed, fixed order, fixed numeric precision. Same input, byte-identical output.</div>
+        </div>
+        <div class="tag">Verifiable</div>
+      </div>
+      <div class="rung good">
+        <div class="lvl">Tier 3</div>
+        <div>
+          <div class="ttl">Deterministic with hardware bounds</div>
+          <div class="sub">Reproducible on a given CPU or GPU family; may drift across vendors or architectures.</div>
+        </div>
+        <div class="tag">Replayable</div>
+      </div>
+      <div class="rung edge">
+        <div class="lvl">Tier 2</div>
+        <div>
+          <div class="ttl">Statistically reproducible</div>
+          <div class="sub">Individual runs differ; distributions of metrics agree within tolerance.</div>
+        </div>
+        <div class="tag">Sampled</div>
+      </div>
+      <div class="rung edge">
+        <div class="lvl">Tier 1</div>
+        <div>
+          <div class="ttl">Claimed reproducible</div>
+          <div class="sub">Authors believe a re-run would match; no proof, no test, no record.</div>
+        </div>
+        <div class="tag">Asserted</div>
+      </div>
+      <div class="rung bad">
+        <div class="lvl">Tier 0</div>
+        <div>
+          <div class="ttl">Irreproducible by construction</div>
+          <div class="sub">Human-in-the-loop data, hardware that no longer exists, proprietary inputs.</div>
+        </div>
+        <div class="tag">Recorded only</div>
+      </div>
+    </div>
+
+    <p>
+      Almost all modern machine learning lives at Tier 2 or below. Random
+      initialisation, dropout, data shuffling, GPU non-determinism, and
+      floating-point accumulation order that depends on the number of
+      threads — none of these are compatible with byte-exact replay. The
+      metrics agree in distribution, but the model weights do not.
+    </p>
+    <p>
+      MLabChain's native verifier is deliberately placed at Tier 4. It is
+      linear regression with a fixed seed, a fixed order, and no
+      parallelism. Every node can replay it and get the same weights.
+      That is what makes consensus-paid verification possible for this
+      class of work and not for others.
+    </p>
+
+    <h2 id="verifiability"><span class="num">04</span>The verifiability boundary</h2>
+    <p>
+      Once you accept that reproducibility is a spectrum, the design space
+      for a scientific ledger becomes clearer. There are two very
+      different things a chain can do:
+    </p>
+
+    <div class="compare">
+      <div class="left">
+        <h4><span class="dot"></span> Record the claim</h4>
+        <ul>
+          <li>Hash every artifact that went into an analysis.</li>
+          <li>Commit the configuration, the split, and the metrics.</li>
+          <li>Sign the whole thing with a key.</li>
+          <li>Make the record append-only and tamper-evident.</li>
+          <li>Works for any tier of the ladder.</li>
+          <li>Cheap to compute, cheap to verify the record.</li>
+        </ul>
+      </div>
+      <div class="right">
+        <h4><span class="dot"></span> Verify the computation</h4>
+        <ul>
+          <li>Re-execute the training and check the outputs match.</li>
+          <li>Only possible at Tier 4 or, with tolerance, Tier 3.</li>
+          <li>Requires deterministic algorithms and numerics.</li>
+          <li>Verification costs what the original computation cost.</li>
+          <li>Impossible for Tier 0, 1, and 2.</li>
+          <li>Cannot be made cheap without a proof system that does not yet exist at scale.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>
+      MLabChain does both, for a narrow class of work. Transactions commit
+      the record for anything. Rewards are paid only for work that can be
+      verified. The chain does not pretend that Tier 2 work is Tier 4, and
+      it does not pay for what it cannot check.
+    </p>
+
+    <div class="callout warn">
+      <div class="ttl">The one sentence that matters</div>
+      <p>
+        A model hash is a commitment, not a proof. It says "this file
+        existed", not "this training ran". The distinction is the entire
+        reason MLabChain has an honest boundary.
+      </p>
+    </div>
+
+    <h2 id="lineage"><span class="num">05</span>The physics lineage</h2>
+    <p>
+      MLabChain was not written by a machine-learning researcher. It grew
+      out of a project called HEPLabChain, which was a provenance ledger
+      for high-energy-physics analyses, and the design choices reflect
+      that origin.
+    </p>
+    <p>
+      HEP analyses have a layered structure that most other fields do not.
+      There is a central bookkeeping system that records which production
+      produced which file. There is a software release system that pins
+      exact application versions. There is a conditions database that
+      pins the calibration and alignment of the detector at the time of
+      any given data-taking run. All of this exists because HEP is a
+      collaboration of thousands of people working on shared data over
+      decades, and reconstruction of any single result would be impossible
+      without it.
+    </p>
+    <p>
+      What HEP does not track — what no central system tracks — is the
+      user's own last mile. The options file that a specific analyst wrote,
+      the exact selection cuts they applied, the tuple they derived from an
+      official sample, the fit configuration they used, the results they
+      published. This is the part that disappears first, and it is the
+      part that MLabChain was originally designed to record.
+    </p>
+    <p>
+      MLabChain generalises that idea. The chain still records the last
+      mile. The last mile is just machine learning instead of an LHCb
+      fit.
+    </p>
+
+    <h2 id="mlclass"><span class="num">06</span>Why this specific class of ML work</h2>
+    <p>
+      Given the full space of machine-learning tasks, only a narrow slice
+      can be consensus-verified. The slice is defined by three
+      requirements:
+    </p>
+    <ol>
+      <li><strong>Deterministic.</strong> The same inputs must produce the same outputs on any node.</li>
+      <li><strong>Bounded.</strong> The verification cost must be knowable in advance, so that a reward can be priced.</li>
+      <li><strong>Arithmetic-simple.</strong> The operation count must be definable symbolically, without reference to hardware or timing.</li>
+    </ol>
+    <p>
+      Linear regression with a fixed seed and a fixed update order satisfies
+      all three. Its op count is <code>epochs × n_train × (3 × n_features
+      + 4)</code> — arithmetic on integers, computable by any node. Its
+      training is deterministic. Its verification is bounded.
+    </p>
+    <p>
+      Almost nothing else does. A transformer with dropout fails (1). A
+      stochastic gradient descent with random shuffling fails (1). A model
+      trained on a GPU whose kernel order depends on the driver fails (1).
+      A model whose operation count depends on dynamic sparsity patterns
+      fails (2) and (3). Every one of these is scientifically valuable,
+      and none of them can be paid for by consensus.
+    </p>
+
+    <div class="callout info">
+      <div class="ttl">What this means in practice</div>
+      <p>
+        MLabChain is not a general framework for scientific ML. It is a
+        framework for a specific class of ML work, chosen because that
+        class is the one that can be honestly verified. If your work
+        falls outside the class, the chain can still record it as
+        provenance — but it will not pay for it, and the documentation
+        says so.
+      </p>
+    </div>
+
+    <h2 id="verified"><span class="num">07</span>What "verified" means here</h2>
+    <p>
+      When MLabChain says a submission has been verified, it means the
+      following things and only the following things:
+    </p>
+    <ul>
+      <li>The transaction is signed by the account that submitted it.</li>
+      <li>The challenge it references exists and is active.</li>
+      <li>The operation count matches the formula for the declared dimensions.</li>
+      <li>The reward matches the formula for the marginal improvement over the challenge's current best.</li>
+      <li>The challenge's budget has not been exceeded.</li>
+      <li>The global supply cap has not been exceeded.</li>
+      <li>The claim <code>(challenge, dataset, model)</code> has not already been paid.</li>
+    </ul>
+    <p>
+      It does <em>not</em> mean the model was actually trained. It does not
+      mean the metrics are true. It does not mean the dataset was read. A
+      malicious submitter who knows the challenge parameters can compute
+      the fixed-point metrics by hand and craft a transaction that passes
+      every check in the list above.
+    </p>
+    <p>
+      What prevents this is the separate <code>verify-ml</code> command,
+      which re-trains the model from the recorded config and compares the
+      metrics. That command runs in Python, is not part of consensus, and
+      is not run automatically by every node. It is an audit tool, not a
+      consensus rule.
+    </p>
+
+    <div class="callout danger">
+      <div class="ttl">The honest statement of the boundary</div>
+      <p>
+        Consensus validates the accounting. It does not validate the
+        science. A node that accepts a block is verifying that the reward
+        arithmetic is self-consistent, not that the training was performed
+        correctly. The chain is a tamper-evident record of claims, and
+        for the one verifier class it implements, those claims can be
+        independently audited by anyone willing to pay the re-execution
+        cost.
+      </p>
+    </div>
+
+    <h2 id="lswu"><span class="num">08</span>The LSWU audit score</h2>
+    <p>
+      Every transaction carries a secondary score called the LabChain
+      Scientific Work Unit, or LSWU. It is computed from the operation
+      count, the wall time, and the quality of the model relative to the
+      challenge baseline:
+    </p>
+
+<pre><code>LSWU = D(N)<span class="p">^0.15</span> · T(t)<span class="p">^0.30</span> · Q(I)<span class="p">^1.00</span>
+
+D(N) = ln(1 + N / N₀)      N₀ = 100,000      <span class="c"># dataset size</span>
+T(t) = ln(1 + t / t₀)      t₀ = 60 s         <span class="c"># wall time</span>
+Q(I) = I<span class="p">^η</span> / (1 + I<span class="p">^η</span>)      η  = 2           <span class="c"># quality</span>
+I    = NMSE_baseline / NMSE_model</code></pre>
+
+    <p>
+      LSWU is not used for minting. The consensus reward uses only the
+      symbolic operation count and the marginal quality delta. LSWU exists
+      as a broader scientific score, and its role in v0.3 is documentary.
+      It is stored so that an auditor looking at a chain of transactions
+      can see not only what was paid but how the work compares on a
+      broader measure of scientific effort.
+    </p>
+    <p>
+      The three terms are logarithmic on purpose. If they were linear, a
+      miner could inflate the score by reporting a slower clock or a
+      larger dataset without doing more work. Log scale gives diminishing
+      returns, and the quality term is bounded between zero and one, so
+      the score cannot explode from an unusually small error.
+    </p>
+    <p>
+      The exponents do not sum to one. Summing to one produces a geometric
+      mean, which compresses the score's dynamic range to about five. The
+      version above spans roughly twelve and is dominated by quality,
+      which matches the intent.
+    </p>
+
+    <h2 id="not"><span class="num">09</span>What MLabChain does not solve</h2>
+    <p>
+      This is the section that matters most, because it is the one a
+      reader is most likely to skip, and the one the project's credibility
+      depends on.
+    </p>
+
+    <h3>It does not verify arbitrary ML training</h3>
+    <p>
+      A model hash is a commitment to a file. It is not a proof that any
+      particular computation produced that file. The only way to verify a
+      training run in general is to re-run it, and re-running is expensive
+      and often non-deterministic. This is a research problem, and
+      MLabChain does not claim to have solved it.
+    </p>
+
+    <h3>It does not make verification cheap</h3>
+    <p>
+      Verification re-executes the training. That is the design. There is
+      no succinct proof of the computation, no sampling shortcut, no
+      probabilistic check that could replace re-execution at scale. A
+      chain whose verification is cheap would not be paying for useful
+      work; it would be paying for something else.
+    </p>
+
+    <h3>It does not decide what science is worth doing</h3>
+    <p>
+      Challenges are registered by whoever chooses to register them. The
+      chain pays against the pinned baseline the challenge defines. It
+      does not evaluate whether the challenge is scientifically
+      interesting, whether the baseline is a meaningful reference, or
+      whether the resulting model is useful in the world. Those judgements
+      are made by humans, and the chain records them.
+    </p>
+
+    <h3>It does not solve Sybil resistance</h3>
+    <p>
+      Account creation is free. A challenge bond exists and a per-proposer
+      active-challenge limit exists, but an attacker with patience can
+      register many challenges across many accounts. What stops the
+      attacker is the marginal reward structure: a challenge whose best
+      quality has already been paid out yields nothing further until
+      somebody beats that quality, and the operation cap bounds the total
+      work any single submission can claim. These are mitigations, not
+      solutions.
+    </p>
+
+    <h3>It does not replace CERN Analysis Preservation, DIRAC, or CVMFS</h3>
+    <p>
+      MLabChain is a personal, local ledger. It records what one analyst
+      did on one machine. It is designed to complement, not replace, the
+      institutional systems that HEP already has. The Bookkeeping knows
+      what files exist; CVMFS knows what software was released; DIRAC
+      knows what jobs ran; MLabChain knows what a specific person did with
+      all of that when they sat down to produce a result.
+    </p>
+
+    <h2 id="reading"><span class="num">10</span>Further reading</h2>
+    <p>
+      The reproducibility literature is large, but a few papers frame the
+      problem better than the rest.
+    </p>
+    <ul>
+      <li><em>Estimating the reproducibility of psychological science</em> — Open Science Collaboration, 2015. The paper that made the problem public outside computer science.</li>
+      <li><em>1,500 scientists lift the lid on reproducibility</em> — Baker, 2016, Nature. A survey of researchers across fields.</li>
+      <li><em>Reproducibility of computational workflows is automated using continuous analysis</em> — Beaulieu-Jones &amp; Greene, 2017. A computational approach to the same problem.</li>
+      <li><em>The Turing Way</em> — a community handbook on reproducible data science. Freely available online.</li>
+      <li><em>SoK: Research Perspectives and Challenges for Bitcoin and Cryptocurrencies</em> — Bonneau et al., 2015. The best single survey of what blockchains can and cannot do.</li>
+      <li><em>Machine Learning Reproducibility Checklist</em> — Joelle Pineau, McGill. A practical checklist for ML papers.</li>
+    </ul>
+
+    <div class="callout ok">
+      <div class="ttl">The takeaway</div>
+      <p>
+        Reproducibility is not a moral property of scientists. It is a
+        property of systems, and it can be improved by designing systems
+        that record what happened without requiring the humans involved to
+        remember. MLabChain is one such system, narrow in scope and honest
+        about the boundary.
+      </p>
+    </div>
+
+    <hr>
+
+    <p class="muted">
+      Next: <a href="mlabchain.html" style="color:var(--amber)">the protocol in detail →</a>
+    </p>
+
+  </article>
+</div>
+
+<div class="pager">
+  <a href="industry.html" class="prev">
+    <span class="dir">← Previous</span>
+    <span class="ttl">The industry</span>
+    <span class="sub">Where real value accrues</span>
+  </a>
+  <a href="mlabchain.html" class="next">
+    <span class="dir">Next →</span>
+    <span class="ttl">MLabChain in detail</span>
+    <span class="sub">Protocol, verifier, boundary</span>
+  </a>
+</div>
+
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="science.html">Science</a> ·
+        <a href="mlabchain.html">Protocol</a> ·
+        <a href="mera.html">Mera</a> ·
+        <a href="docs.html">Docs</a> ·
+        <a href="about.html">About</a>
+      </div>
+    </div>
+    <div class="foot-right"><img src="assets/mlabchain_txt.png" alt=""></div>
+  </div>
+  <div class="foot-tagline">Proof of Scientific Work</div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

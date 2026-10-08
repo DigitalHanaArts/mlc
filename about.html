@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About — MLabChain</title>
+<meta name="description" content="Digital Hana Arts, project history, contributors, and the license under which MLabChain is released.">
+<meta name="theme-color" content="#05060a">
+<link rel="icon" type="image/png" href="assets/mlabchain.png">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="index.html">
+      <span class="pulse"></span><img src="assets/mlabchain.png" alt="">MLabChain
+    </a>
+    <div class="nav-menu">
+      <a href="index.html">Home</a>
+      <a href="blockchain.html">Blockchain</a>
+      <a href="industry.html">Industry</a>
+      <a href="mlabchain.html">MLabChain</a>
+      <a href="mera.html">Mera</a>
+      <a href="docs.html">Docs</a>
+      <a href="about.html" class="active">About</a>
+    </div>
+    <button class="nav-toggle" aria-label="Menu"><span></span></button>
+    <div class="nav-prog" id="navProg"></div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap page-hero-in">
+    <nav class="crumbs">
+      <a href="index.html">Home</a><span class="sep">/</span><span>About</span>
+    </nav>
+    <div class="eyebrow rev">Credits</div>
+    <h1 class="h1 rev d1">About the<br><em>project and its keepers.</em></h1>
+    <p class="lede rev d2" style="margin-top:24px">
+      Who builds MLabChain, why it exists, who maintains it, and the terms
+      under which it is released.
+    </p>
+  </div>
+</header>
+
+<div class="article">
+  <aside class="article-toc rev">
+    <div class="lbl">On this page</div>
+    <ol>
+      <li><a href="#dha">Digital Hana Arts</a></li>
+      <li><a href="#history">Project history</a></li>
+      <li><a href="#credits">Credits</a></li>
+      <li><a href="#hana">Hana</a></li>
+      <li><a href="#license">License</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ol>
+  </aside>
+
+  <article class="article-body">
+
+    <h2 id="dha"><span class="num">01</span>Digital Hana Arts</h2>
+    <p>
+      MLabChain is developed and maintained by <strong>Digital Hana Arts</strong>,
+      a small studio building honest, research-grade tools in the intersection
+      of machine learning, scientific reproducibility, and distributed
+      systems.
+    </p>
+    <p>
+      DHA's work is deliberately narrow. The studio is not trying to build a
+      platform, a network, or an investment vehicle. It builds tools that
+      solve a specific problem, states the problem's limits clearly, and
+      releases the code under a permissive license so that anyone can use,
+      study, or extend it.
+    </p>
+
+    <div class="grid g2" style="margin-top:28px">
+      <div class="card">
+        <span class="idx">Focus</span>
+        <h3>Reproducibility</h3>
+        <p>Tools that help researchers prove what they actually did, long after the fact.</p>
+      </div>
+      <div class="card">
+        <span class="idx">Focus</span>
+        <h3>Applied cryptography</h3>
+        <p>Small systems that use hashing, signatures, and Merkle proofs for real, narrow problems.</p>
+      </div>
+      <div class="card">
+        <span class="idx">Focus</span>
+        <h3>Honest documentation</h3>
+        <p>Every project states what it does, what it does not do, and where its trust boundaries are.</p>
+      </div>
+      <div class="card">
+        <span class="idx">Focus</span>
+        <h3>Local-first software</h3>
+        <p>Tools that run on one machine, need no external service, and outlive their authors.</p>
+      </div>
+    </div>
+
+    <h2 id="history"><span class="num">02</span>Project history</h2>
+    <p>
+      MLabChain grew out of a much older project called HEPLabChain, which
+      was a provenance ledger for high-energy-physics analyses. That project
+      recorded the hashes of options files, ROOT tuples, and fit results so
+      that an LHCb analyst could prove, months or years later, that a
+      particular file had not been modified.
+    </p>
+    <p>
+      MLabChain generalises the same idea from physics to machine learning.
+      The scientific layer was rewritten to train models instead of just
+      hashing them. The chain layer was rewritten in C++ to make signatures,
+      replay, and rewards auditable independently of the Python client. The
+      reward formula went through several iterations, and the current
+      marginal-against-best design was the result of trying to prevent
+      duplicate payment without adding centralised challenge review.
+    </p>
+
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="yr">v0.1.7</div>
+        <div class="ttl">Python-only provenance ledger</div>
+        <p>SHA-256 hashing, Merkle trees, RSA-signed transactions, JSON chain, non-transferable credits.</p>
+      </div>
+      <div class="tl-item">
+        <div class="yr">v0.2</div>
+        <div class="ttl">First C++ core, first Mera</div>
+        <p>Ed25519, encrypted wallet, SQLite state, integer reward arithmetic, transferable balances. Still single-node.</p>
+      </div>
+      <div class="tl-item">
+        <div class="yr">v0.3.0-devnet</div>
+        <div class="ttl">Small-network reference protocol</div>
+        <p>Signed blocks, cumulative-work fork choice, adaptive PoW, challenge registry, marginal rewards, P2P sync and relay, multisig, governance, ERC-20 template.</p>
+      </div>
+      <div class="tl-item">
+        <div class="yr">Next</div>
+        <div class="ttl">Correctness and coverage</div>
+        <p>Fixes for marginal reward estimation on the client side, expanded test coverage, and the bridge specification document.</p>
+      </div>
+    </div>
+
+    <h2 id="credits"><span class="num">03</span>Credits</h2>
+    <p>
+      Protocol design, C++ core, Python client, and documentation:
+      <strong>Ali Bavarchee</strong>.
+    </p>
+    <p>
+      The project draws on decades of prior work in cryptographic primitives,
+      consensus algorithms, and Merkle tree design. The specific sources
+      that shaped the current implementation are listed in
+      <a href="blockchain.html#reading" style="color:var(--amber)">the further reading section</a>.
+    </p>
+    <p>
+      The mascot, <strong>Hana</strong>, was drawn by a member of Digital
+      Hana Arts and has been part of the project from the beginning. She
+      approves of the 60-second target block time and has no opinion on the
+      retarget window.
+    </p>
+
+    <h2 id="hana"><span class="num">04</span>Hana</h2>
+
+    <div class="grid g2" style="align-items:center;margin-top:24px">
+      <div style="border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;background:var(--bg-1)">
+        <img src="assets/Hana_the_kitten.jpeg" alt="Hana the kitten" style="width:100%;display:block">
+      </div>
+      <div>
+        <h3>Hana</h3>
+        <p>
+          Hana is a kitten. She is the official mascot of MLabChain and
+          reminds everyone that a ledger is only as useful as the analysis
+          it makes reproducible.
+        </p>
+        <p>
+          She does not sign transactions. She does not appear in any
+          transaction payload. She has never been observed in the
+          vicinity of a Merkle root. She is, however, aware of the
+          project's reward cap, and she considers it reasonable.
+        </p>
+        <p class="muted" style="font-family:var(--mono);font-size:.82rem;letter-spacing:.06em">
+          — Digital Hana Arts
+        </p>
+      </div>
+    </div>
+
+    <h2 id="license"><span class="num">05</span>License</h2>
+    <p>
+      MLabChain is released under the <strong>Apache License 2.0</strong>.
+      You are free to use, modify, and distribute the code, including for
+      commercial purposes, provided that you retain the copyright notice
+      and the license text.
+    </p>
+
+    <div class="callout info">
+      <div class="ttl">What Apache 2.0 gives you</div>
+      <p>
+        A permissive license with an explicit patent grant. It is suitable
+        for adoption by institutions and by companies, and it does not
+        require derivative works to be open-source. If your intent is that
+        derivatives must remain open, you would want a copyleft license
+        instead. Apache 2.0 is the right choice for a scientific tool
+        where the goal is maximum adoption.
+      </p>
+    </div>
+
+    <p>
+      The full license text is available in the repository at
+      <code>LICENSE.txt</code>.
+    </p>
+
+    <h2 id="contact"><span class="num">06</span>Contact</h2>
+    <p>
+      The project is developed on GitHub at
+      <a href="https://github.com/digitalhanaarts" style="color:var(--amber)">digitalhanaarts</a>.
+    </p>
+    <p>
+      Bug reports, feature requests, and pull requests are welcome through
+      the standard GitHub workflows. For security disclosures, please open
+      a private security advisory on the repository rather than a public
+      issue.
+    </p>
+    <p>
+      The <a href="docs.html" style="color:var(--amber)">docs page</a>
+      describes the CLI and protocol in detail. The
+      <a href="mlabchain.html" style="color:var(--amber)">protocol page</a>
+      covers the architecture and the honest boundary.
+    </p>
+
+    <hr>
+
+    <p class="muted">
+      Return to <a href="index.html" style="color:var(--amber)">the home page →</a>
+    </p>
+
+  </article>
+</div>
+
+<div class="pager">
+  <a href="docs.html" class="prev">
+    <span class="dir">← Previous</span>
+    <span class="ttl">CLI and protocol</span>
+    <span class="sub">Command reference, wire format</span>
+  </a>
+  <a href="index.html" class="next">
+    <span class="dir">Back to start →</span>
+    <span class="ttl">Home</span>
+    <span class="sub">MLabChain overview</span>
+  </a>
+</div>
+
+<footer>
+  <div class="foot-in">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/DHA_logo.png" alt="">
+        <span class="nm">Digital Hana Arts</span>
+      </div>
+      <div class="foot-meta">
+        MLabChain · Mera v0.3.0-dev1 · Apache-2.0<br>
+        <a href="index.html">Home</a> ·
+        <a href="blockchain.html">Blockchain</a> ·
+        <a href="industry.html">Industry</a> ·
+        <a href="mlabchain.html">Protocol</a> ·
+        <a href="mera.html">Mera</a> ·
+        <a href="docs.html">Docs</a> ·
+        <a href="about.html">About</a>
+      </div>
+    </div>
+    <div class="foot-right"><img src="assets/mlabchain_txt.png" alt=""></div>
+  </div>
+  <div class="foot-tagline">Proof of Scientific Work</div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>
